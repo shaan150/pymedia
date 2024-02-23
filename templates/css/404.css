@@ -1,0 +1,43 @@
+body {
+    font-family: Arial, sans-serif;
+    background-color: #0e0e0e;
+    color: #fff;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+}
+
+.error-container, .home-link-container {
+    text-align: center;
+}
+
+.error-container h1 {
+    font-size: 3em;
+    font-weight: bold;
+    margin-bottom: 10px;
+}
+
+.error-container p {
+    font-size: 1.2em;
+    margin-bottom: 30px;
+}
+
+.home-link {
+    padding: 15px 30px;
+    background-color: transparent;
+    color: #fff;
+    text-decoration: none;
+    border: 2px solid #fff;
+    border-radius: 50px;
+    font-weight: bold;
+    transition: background-color 0.3s, color 0.3s;
+}
+
+.home-link:hover {
+    background-color: #fff;
+    color: #0e0e0e;
+}

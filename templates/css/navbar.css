@@ -1,0 +1,91 @@
+/* navbar.css */
+.navbar {
+    background-color: #000; /* Dark background */
+    padding: 10px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-family: Arial, sans-serif;
+}
+
+.nav-links a, .nav-auth a {
+    color: #fff;
+    text-decoration: none;
+    margin: 0 15px;
+    font-size: 16px;
+    transition: color 0.3s ease;
+}
+
+.nav-links a:hover, .nav-auth a:hover {
+    color: #1DB954; /* Spotify green for hover state */
+}
+
+.plus-menu {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+#plus-btn {
+    background-color: #1DB954; /* Spotify green */
+    color: #000;
+    border: none;
+    cursor: pointer;
+    padding: 8px 12px;
+    border-radius: 50%;
+    font-size: 24px; /* Adjust size of the plus icon */
+    transition: background-color 0.3s ease;
+}
+
+#plus-btn:hover {
+    background-color: #1ed760; /* Lighter green on hover */
+}
+
+.menu-content {
+    display: none;
+    position: absolute;
+    top: 40px; /* Adjust based on the size of your plus button */
+    right: 0;
+    background-color: #282828; /* Dark background for the dropdown */
+    color: #fff;
+    border-radius: 8px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.5); /* Subtle shadow for depth */
+    z-index: 5;
+}
+
+.menu-content a {
+    display: block;
+    padding: 10px;
+    text-decoration: none;
+    color: #fff;
+    transition: background-color 0.3s ease;
+}
+
+.menu-content a:hover {
+    background-color: #333; /* Slightly lighter on hover */
+}
+
+.plus-menu:hover .menu-content {
+    display: block; /* Show dropdown menu on hover */
+}
+
+/* Enhanced Sign Out Button Styling */
+.nav-auth a, .nav-auth button {
+    background-color: transparent;
+    color: #fff;
+    border: 1px solid #1DB954; /* Spotify green border */
+    padding: 8px 15px;
+    border-radius: 20px;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    transition: all 0.3s ease;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.nav-auth button:hover, .nav-auth a:hover {
+    background-color: #1DB954; /* Spotify green background on hover */
+    color: #000;
+}

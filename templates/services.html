@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Services</title>
+    <link rel="stylesheet" href="templates/css/services.css"> <!-- Update the path as needed -->
+    <link rel="stylesheet" type="text/css" href="http://cdn.datatables.net/1.11.3/css/jquery.dataTables.css">
+    <link rel="stylesheet" href="http://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+    <script type="text/javascript" src="http://code.jquery.com/jquery-3.5.1.js"></script>
+    <script type="text/javascript" src="http://cdn.datatables.net/1.11.3/js/jquery.dataTables.js"></script>
+    <script src="templates/script/services.js"></script> <!-- Update the path as needed -->
+</head>
+<body>
+{% include 'navbar.html' %} <!-- Include navbar -->
+<h1>Services</h1>
+<div class="services-container">
+    <div class="create-service-button-container">
+        <a href="/service/create" class="create-service-button">Create Service</a>
+    </div>
+    <table id="servicesTable">
+        <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>URL</th>
+            <th>CPU Used</th>
+            <th>CPU Free</th>
+            <th>Memory Used</th>
+            <th>Memory Free</th>
+            <th>Total Memory</th>
+            <th>Last Update</th>
+        </tr>
+        </thead>
+        <tbody>
+        {% for service in services %}
+            <tr>
+                <td><a href="/service?service_url={{ service.url }}">{{ service.name }}</a></td>
+                <td>{{ service.type }}</td>
+                <td><a href="http://{{ service.url }}/docs" target="_blank">{{ service.url }}</a></td>
+                <td>{{ service.cpu_used }}</td>
+                <td>{{ service.cpu_free }}</td>
+                <td>{{ service.memory_used }}</td>
+                <td>{{ service.memory_free }}</td>
+                <td>{{ service.total_memory }}</td>
+                <td>{{ service.last_update }}</td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+<!-- Delete Confirmation Modal -->
+<div id="deleteModal" class="modal">
+    <div class="modal-content">
+        <span class="close-button">×</span>
+        <h2>Confirm Deletion</h2>
+        <p>Are you sure you want to delete this service?</p>
+        <button id="confirmDelete">Delete</button>
+        <button id="cancelDelete">Cancel</button>
+    </div>
+</div>
+{% include 'audio_player.html' %} <!-- Include audio player -->
+</body>
+</html>

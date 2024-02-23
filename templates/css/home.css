@@ -1,0 +1,129 @@
+body {
+    background-color: #121212; /* Spotify dark background */
+    color: #ffffff;
+    font-family: 'Arial', sans-serif;
+    margin: 0;
+    padding: 0;
+}
+
+.navbar {
+    background-color: #000000;
+    padding: 10px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.navbar a, .navbar a:visited {
+    color: #ffffff;
+    text-decoration: none;
+    margin: 0 15px;
+}
+
+.error-message {
+    color: #ff0000;
+    text-align: center;
+    margin: 20px 0;
+}
+
+h2 {
+    color: #1DB954; /* Spotify green for headings */
+    text-align: center;
+    margin: 20px 0;
+}
+
+.content {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr); /* 6 cards per row */
+    gap: 20px;
+    padding: 20px;
+    max-width: 1200px;
+    margin: auto;
+    overflow-y: auto;
+    max-height: calc(100vh - 200px); /* Adjust based on your header/footer size */
+}
+
+.playlist-link {
+    text-decoration: none;
+    color: #ffffff;
+}
+
+.playlist {
+    background-color: #181818; /* Card background */
+    border-radius: 8px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start; /* Title above image */
+}
+
+.playlist img {
+    width: 100%;
+    height: auto;
+    border-bottom: 1px solid #282828; /* Separator */
+}
+
+.playlist-title {
+    font-size: 1em;
+    margin: 10px;
+    text-align: center;
+}
+
+/* Adjustments for smaller screens */
+@media (max-width: 1600px) {
+    .content {
+        grid-template-columns: repeat(4, 1fr); /* 4 cards per row */
+    }
+}
+
+@media (max-width: 1200px) {
+    .content {
+        grid-template-columns: repeat(3, 1fr); /* 3 cards per row */
+    }
+}
+
+@media (max-width: 800px) {
+    .content {
+        grid-template-columns: repeat(2, 1fr); /* 2 cards per row */
+    }
+}
+
+@media (max-width: 600px) {
+    .content {
+        grid-template-columns: repeat(1, 1fr); /* 1 card per row */
+    }
+}
+
+/* Enhanced error-message styling */
+.error-message {
+    display: none; /* Initially hidden; make visible as needed */
+    background-color: #ff4757; /* Vivid color for visibility */
+    color: #ffffff;
+    text-align: center;
+    padding: 15px;
+    margin: 20px auto;
+    width: 80%;
+    max-width: 600px; /* Ensures the message doesn't stretch too wide on larger screens */
+    border-radius: 8px; /* Rounded corners for a modern look */
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* Soft shadow for depth */
+    font-weight: bold;
+    animation: fadeIn 0.5s ease-in-out;
+}
+
+/* Simple fade-in animation */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Example CSS for making the error message visible */
+.error-message.visible {
+    display: block;
+}

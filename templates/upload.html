@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Upload Song</title>
+    <link rel="stylesheet" href="/templates/css/upload.css">
+</head>
+<body>
+{% include 'navbar.html' %} <!-- Include navbar -->
+<div class="form-container">
+    <div id="error-message" class="error-message" style="{{ 'display: none;' if not error else '' }}">
+        {{ error }}
+    </div>
+    <form action="/upload/song" method="post" enctype="multipart/form-data">
+        <div class="form-group">
+            <label for="song_name">Song Name:</label>
+            <input type="text" id="song_name" name="song_name" required>
+        </div>
+        <div class="form-group">
+            <label for="artist">Artist:</label>
+            <input type="text" id="artist" name="artist" required>
+        </div>
+        <div class="form-group">
+            <label for="image">Image (JPG only):</label>
+            <input type="file" id="image" name="image" accept="image/jpeg" required>
+        </div>
+        <div class="form-group">
+            <label for="mp3_file">MP3 File:</label>
+            <input type="file" id="mp3_file" name="mp3_file" accept="audio/mpeg" required>
+        </div>
+        <div class="form-group">
+            <button type="submit">Upload Song</button>
+        </div>
+    </form>
+</div>
+{% if current_song %}
+    {% include 'audio_player.html' %} <!-- Include audio player -->
+{% endif %}
+</body>
+</html>

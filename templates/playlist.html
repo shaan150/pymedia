@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Playlist Library</title>
+    <link rel="stylesheet" href="playlist.css">
+    <link rel="stylesheet" type="text/css" href="http://cdn.datatables.net/1.11.3/css/jquery.dataTables.min.css">
+    <script type="text/javascript" src="http://code.jquery.com/jquery-3.5.1.min.js"></script>
+    <script type="text/javascript" src="http://cdn.datatables.net/1.11.3/js/jquery.dataTables.min.js"></script>
+    <link rel="stylesheet" href="http://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+    <script src="library.js"></script> <!-- Ensure this path matches your JavaScript file location -->
+</head>
+<body>
+{% include 'navbar.html' %} <!-- Including the navbar -->
+<h1>Playlist</h1>
+<div class="library-container">
+    <table id="playlistTable" class="display" style="width:100%">
+        <thead>
+            <tr>
+                <th>Image</th>
+                <th>Name</th>
+                <th>Artist</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for song in playlist_songs %}
+                <tr>
+                    <td><img src="{{ song.image_url|safe }}" alt="Track Image" style="width: 50px; height: 50px; border-radius: 50%;"></td>
+                    <td>{{ song.song_name }}</td>
+                    <td>{{ song.artist }}</td>
+                     <td> <!-- Action buttons -->
+                    <!-- Assuming you have JS functions or backend implementations to handle these actions -->
+                    <a href="javascript:void(0);" onclick="playSong('{{ song.song_id }}', '{{ song.song_name }}', '{{ song.artist }}', '{{ song.image_url }}', '{{ song.song_url }}')">
+                        <i class="fas fa-play"></i>
+                    </a>
+                    <a href="{{ song.song_url|safe }}" download="song.mp3"><i class="fas fa-download"></i></a></td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% if current_song %}
+    {% include 'audio_player.html' %} <!-- Include audio player if there's a current song -->
+{% endif %}
+<script>
+
+</script>
+</body>
+</html>

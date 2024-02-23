@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create Service</title>
+    <link rel="stylesheet" href="http://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+    <link rel="stylesheet" href="/templates/css/upload.css">
+</head>
+<body>
+{% include 'navbar.html' %} <!-- Include navbar -->
+<div class="form-container">
+    <div id="error-message" class="error-message" style="{{ 'display: none;' if not error else '' }}">
+        {{ error }}
+    </div>
+    <form action="/service/create" method="post" enctype="multipart/form-data">
+        <div class="form-group">
+            <label for="service_type">Service Type</label>
+            <select id="service_type" name="service_type" required>
+                {% for name, value in service_types %}
+                    <option value="{{ value }}">{{ name.replace('_', ' ').title() }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="form-group">
+            <button type="submit">Create Service</button>
+        </div>
+    </form>
+</div>
+{% include 'audio_player.html' %} <!-- Include audio player -->
+</body>
+</html>

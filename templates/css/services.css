@@ -1,0 +1,144 @@
+body {
+    background-color: #121212;
+    color: #fff;
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 20px;
+}
+
+h1 {
+    color: #1DB954; /* Spotify green */
+    text-align: center;
+}
+
+.services-container {
+    overflow-x: auto; /* Ensures table is scrollable on small screens */
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+}
+
+table, th, td {
+    border: 1px solid #333;
+}
+
+th, td {
+    text-align: left;
+    padding: 8px;
+}
+
+th {
+    background-color: #282828;
+}
+
+td {
+    background-color: #181818;
+}
+
+a {
+    color: #1DB954; /* Spotify green */
+    text-decoration: none;
+}
+
+a:hover {
+    text-decoration: underline;
+}
+
+tr:nth-child(even) td {
+    background-color: #282828; /* Slightly lighter for alternate rows */
+}
+
+#searchInput {
+    background-color: #282828;
+    border: 1px solid #333;
+    color: #fff;
+    margin-bottom: 20px;
+    padding: 10px;
+    width: calc(100% - 22px); /* Adjust based on padding and border */
+    font-size: 16px;
+    border-radius: 4px;
+}
+
+.delete-btn {
+    border: none;
+    background-color: transparent;
+    color: #ff4757; /* A color that indicates a delete action */
+    cursor: pointer;
+}
+
+.delete-btn:hover {
+    color: #ff6b81; /* Lighter shade on hover */
+}
+
+/* The Modal (background) */
+.modal {
+    display: none; /* Hidden by default */
+    position: fixed; /* Stay in place */
+    z-index: 1; /* Sit on top */
+    left: 0;
+    top: 0;
+    width: 100%; /* Full width */
+    height: 100%; /* Full height */
+    overflow: auto; /* Enable scroll if needed */
+    background-color: rgb(0,0,0); /* Fallback color */
+    background-color: rgba(0,0,0,0.4); /* Black w/ opacity */
+}
+
+/* Modal Content */
+.modal-content {
+    background-color: #282828;
+    margin: 15% auto; /* 15% from the top and centered */
+    padding: 20px;
+    border: 1px solid #888;
+    width: 80%; /* Could be more or less, depending on screen size */
+    color: white;
+}
+
+/* The Close Button */
+.close-button {
+    color: #aaa;
+    float: right;
+    font-size: 28px;
+    font-weight: bold;
+}
+
+.close-button:hover,
+.close-button:focus {
+    color: #1DB954;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.modal button {
+    background-color: #1DB954; /* Spotify green */
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    margin: 10px;
+    cursor: pointer;
+}
+
+.modal button:hover {
+    opacity: 0.8;
+}
+
+.create-service-button-container {
+    text-align: center; /* Center-align the button container */
+    margin-bottom: 20px; /* Add some space before the table */
+}
+
+.create-service-button {
+    background-color: #1DB954; /* Spotify green for the button background */
+    color: #ffffff; /* White text color */
+    padding: 10px 20px; /* Padding for size */
+    text-decoration: none; /* Remove underline from link */
+    border-radius: 5px; /* Rounded corners */
+    transition: background-color 0.3s; /* Smooth transition for hover effect */
+}
+
+.create-service-button:hover {
+    background-color: #17a849; /* Slightly darker green on hover */
+}

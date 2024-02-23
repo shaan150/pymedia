@@ -1,0 +1,70 @@
+.player {
+    background-color: #282828; /* Spotify dark theme for player background */
+    color: #fff;
+    padding: 10px 20px; /* Adjust padding for breathing space */
+    display: flex;
+    align-items: center;
+    justify-content: space-around; /* Space elements evenly */
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    box-shadow: 0 -2px 4px rgba(0, 0, 0, 0.5); /* Slight shadow for depth */
+}
+
+.track-thumbnail img {
+    border-radius: 50%;
+}
+
+.audio-controls {
+    display: flex;
+    align-items: center;
+    justify-content: center; /* Center audio controls */
+    width: 100%; /* Ensure controls take full width for spacing */
+    max-width: 600px; /* Max width to prevent stretching on larger screens */
+    margin: auto; /* Center the controls container */
+}
+
+.icon-btn {
+    background: none;
+    border: none;
+    color: #fff;
+    cursor: pointer;
+    padding: 5px; /* Padding for clickable area */
+    font-size: 20px; /* Adjust icon size */
+}
+
+.time-info {
+    font-size: 14px;
+}
+
+.progress-container {
+    flex-grow: 1;
+    background-color: #404040; /* Darker shade for progress background */
+    border-radius: 2px;
+    height: 5px; /* Ensure there's a minimum height */
+    cursor: pointer;
+    margin: 0 15px; /* Margin for space around progress bar */
+    width: 100%; /* Ensure full width within its container */
+}
+
+.progress-bar {
+    background-color: #1DB954; /* Spotify green for progress */
+    height: 100%; /* Use 100% of the container's height */
+    width: 0%; /* Start with no width, will be adjusted by JS */
+    border-radius: 2px;
+}
+
+.track-info {
+    display: flex;
+    align-items: center;
+    justify-content: center; /* Center track info */
+    gap: 10px; /* Space between text and download button */
+    flex-grow: 1; /* Allow track info to fill space for alignment */
+    max-width: 200px; /* Prevents track info from pushing other elements too far on large screens */
+}
+
+#download-btn {
+    color: #1DB954; /* Spotify green for download button */
+    font-size: 16px;
+}

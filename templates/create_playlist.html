@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Upload Song</title>
+    <link rel="stylesheet" href="http://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+    <link rel="stylesheet" href="/templates/css/upload.css">
+</head>
+<body>
+{% include 'navbar.html' %} <!-- Include navbar -->
+<div class="form-container">
+    <div id="error-message" class="error-message" style="{{ 'display: none;' if not error else '' }}">
+        {{ error }}
+    </div>
+    <form action="/upload/playlist" method="post" enctype="multipart/form-data">
+        <div class="form-group">
+            <label for="playlist_name">Playlist Name</label>
+            <input type="text" id="playlist_name" name="playlist_name" required>
+        </div>
+        <div class="form-group">
+            <label for="image">Image (JPG only):</label>
+            <input type="file" id="image" name="image" accept="image/jpeg" required>
+        </div>
+        <div class="form-group">
+            <button type="submit">Create Playlist</button>
+        </div>
+    </form>
+</div>
+{% include 'audio_player.html' %} <!-- Include audio player -->
+
+</body>
+</html>

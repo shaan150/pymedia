@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Error</title>
+</head>
+<body>
+    <div w3-include-html="content.html"></div>
+    {% if error %}
+        <h1>{{ error_code }}</h1>
+        <p>{{ error }}</p>
+    {% endif %}
+
+</body>
+</html>

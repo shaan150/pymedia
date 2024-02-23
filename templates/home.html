@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Music Service Homepage</title>
+    <link rel="stylesheet" href="http://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+    <link rel="stylesheet" href="templates/css/home.css"> <!-- Link to the external stylesheet -->
+</head>
+<body>
+{% include 'navbar.html' %} <!-- Include navbar -->
+
+<div id="error-message" class="error-message" style="{{ 'display: none;' if not error else '' }}">
+    {{ error }}
+</div>
+<h2>My Songs</h2>
+{% include 'library.html' %}
+{% include 'audio_player.html' %} <!-- Include audio player -->
+</body>
+</html>

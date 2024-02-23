@@ -1,0 +1,30 @@
+/* Base styles */
+body {
+    background-color: #121212;
+    color: white;
+    font-family: Arial, sans-serif;
+}
+
+/* Playlist table and actions */
+table {
+    color: white;
+}
+table a {
+    color: #1DB954; /* Spotify green for interactive elements */
+    text-decoration: none;
+}
+table a:hover {
+    text-decoration: underline;
+}
+.fas {
+    cursor: pointer;
+}
+
+/* Adjusting for responsiveness */
+@media (max-width: 768px) {
+    .navbar {
+        flex-direction: column;
+    }
+}
+
+/* Further customization as needed to match the provided CSS */
