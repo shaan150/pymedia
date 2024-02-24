@@ -1,5 +1,4 @@
 import asyncio
-import hashlib
 from datetime import datetime, timedelta
 from hashlib import pbkdf2_hmac
 
@@ -9,7 +8,6 @@ from fastapi.logger import logger
 from jwt import PyJWTError
 from starlette.concurrency import run_in_threadpool
 
-from classes.User import User
 from classes.enum.ServiceType import ServiceType
 from classes.exception.TokenCreationException import TokenCreationException
 from classes.services.ExtendedService import ExtendedService

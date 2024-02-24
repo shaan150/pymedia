@@ -1,6 +1,7 @@
 import asyncio
 import sys
 from contextlib import asynccontextmanager
+from typing import Optional
 
 from fastapi import FastAPI, BackgroundTasks, HTTPException
 from fastapi.logger import logger
@@ -36,7 +37,7 @@ class BaseService:
         - `service_exception_handling(self, service_url, endpoint, method, params=None, data=None, files=None, stream=False)`: Handles service exceptions and returns the response.
 
     """
-    def __init__(self, service_type: ServiceType):
+    def __init__(self, service_type: ServiceType, debug: Optional[bool] = False):
         self.service_type = service_type
         self.properties_file = "service_properties.json"
         self.service_name = generate_service_name(service_type)
@@ -56,6 +57,7 @@ class BaseService:
             redoc_url=None,
             lifespan=self.lifespan
         )
+        self.debug = debug
 
     @asynccontextmanager
     async def lifespan(self, app: FastAPI):
@@ -77,15 +79,20 @@ class BaseService:
 
         :return: None
         """
-        try:
-            self.service_port = get_property(f"{self.service_type.value}", self.properties_file)
+        if not self.debug:
+            try:
+                self.service_port = get_property(f"{self.service_type.value}", self.properties_file)
+                self.service_url = f"{get_local_ip()}:{self.service_port}"
+                logger.info("Starting Service On URL " + self.service_url)
+            except Exception as e:
+                logger.error(f"Error occurred while starting service: {str(e)}, exiting...")
+                # pause so the error message is printed before exiting by asking for input
+                input("Press enter to exit")
+                exit(1)
+        else:
+            self.service_port = 8000
             self.service_url = f"{get_local_ip()}:{self.service_port}"
             logger.info("Starting Service On URL " + self.service_url)
-        except Exception as e:
-            logger.error(f"Error occurred while starting service: {str(e)}, exiting...")
-            # pause so the error message is printed before exiting by asking for input
-            input("Press enter to exit")
-            exit(1)
 
 
     async def stop(self):

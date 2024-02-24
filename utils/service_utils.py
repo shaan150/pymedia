@@ -228,7 +228,6 @@ def get_property(property: str, file_path: str):
     """
     if property is None or file_path is None:
         raise ValueError("Invalid Property or File Path")
-
     # Read and parse the JSON file
     with open(file_path, 'r') as file:
         data = json.load(file)
@@ -239,6 +238,7 @@ def get_property(property: str, file_path: str):
 
         return value
     except KeyError:
+        breakpoint()
         raise MissingPropertyException(f"{property} not found in {file_path}")
     except Exception as e:
         raise e
@@ -257,7 +257,7 @@ def generate_service_name(service_type):
 
     time = datetime.now()
 
-    return f"{service_type}_{device_name}_{random_name}_{time}"
+    return f"{service_type.name}_{device_name}_{random_name}_{time}"
 
 
 def get_main_service_url():
@@ -268,17 +268,7 @@ def get_main_service_url():
     :rtype: str
     :raise Exception: If the main service URL is not found in the JSON file.
     """
-    # Path to your JSON file
-    file_path = 'service_properties.json'
-
-    # Read and parse the JSON file
-    with open(file_path, 'r') as file:
-        data = json.load(file)
-
-    # Access the property
-    main_service_url = data['main_service_url']
-
-    if main_service_url is None:
-        raise Exception("Main Service URL not found in service_properties.json")
-    else:
-        return main_service_url
+    try:
+        return get_property('main_service_url', 'service_properties.json')
+    except Exception:
+        raise

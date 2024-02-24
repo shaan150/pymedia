@@ -17,10 +17,41 @@ app = service.app
 
 @app.get("/")
 async def root():
+    """
+    Returns the service data fetched by `fetch_service_data` method.
+
+    :return: The service data.
+    """
     return await service.fetch_service_data()
 
 @app.put("/upload/song")
 async def upload_file(song_id: str, mp3_file: UploadFile = File(...), image_file: UploadFile = File(...)):
+    """
+    :param song_id: The ID of the song being uploaded.
+    :param mp3_file: The MP3 file to be uploaded.
+    :param image_file: The image file associated with the song.
+    :return: None
+
+    This method is used to upload a song file and its associated image file. It saves the files to the appropriate directories on the server.
+
+    If any of the parameters (`song_id`, `mp3_file`, `image_file`) is `None`, it will raise a `HTTPException` with a status code of 400 indicating an invalid request.
+
+    The method first creates the necessary directories (`service.image_dir`, `service.music_dir`) if they do not exist.
+
+    It then extracts the file extensions from the `mp3_file` and `image_file` filenames.
+
+    Next, it constructs file paths for the MP3 file and the image file using the `song_id` and the extracted extensions.
+
+    The method saves the MP3 file by opening a binary file for writing and writing the contents of the `mp3_file` to the buffer. It then saves the buffer to disk.
+
+    The file pointer for the MP3 file is then reset to the beginning, in case it needs to be read again.
+
+    The same process is then repeated for the image file.
+
+    If any exception occurs during the file saving process, it will be logged and a `HTTPException` with a status code of 500 will be raised.
+
+    Note: This method uses async/await syntax for asynchronous file operations.
+    """
     if song_id is None or mp3_file is None or image_file is None:
         raise HTTPException(status_code=400, detail="Invalid Request")
 
@@ -62,6 +93,15 @@ async def upload_file(song_id: str, mp3_file: UploadFile = File(...), image_file
 
 @app.delete("/delete/song")
 async def delete_file(song_id: str):
+    """
+    Delete the MP3 and image files associated with the provided song ID.
+
+    :param song_id: The ID of the song.
+    :type song_id: str
+    :return: A dictionary with the detail of the deletion process.
+    :rtype: dict
+    :raises HTTPException: If the song ID is invalid or an error occurs while deleting the files.
+    """
     if song_id is None:
         raise HTTPException(status_code=400, detail="Invalid Request")
     try:
@@ -80,6 +120,14 @@ async def delete_file(song_id: str):
 
 @app.put("/upload/playlist")
 async def upload_playlist(playlist_id: str, image_file: UploadFile = File(...)):
+    """
+    Uploads a playlist with the given playlist ID and image file.
+
+    :param playlist_id: The ID of the playlist.
+    :param image_file: The image file to upload.
+    :return: A dictionary with the detail message indicating the success of the upload.
+    :raises HTTPException: If the request is invalid or if there is an error saving the files.
+    """
     if playlist_id is None or image_file is None:
         raise HTTPException(status_code=400, detail="Invalid Request")
     try:
@@ -99,6 +147,20 @@ async def upload_playlist(playlist_id: str, image_file: UploadFile = File(...)):
 
 @app.delete("/delete/playlist")
 async def delete_playlist(playlist_id: str):
+    """
+    :param playlist_id: The ID of the playlist to be deleted.
+    :return: A dictionary with the message "Playlist deleted successfully".
+
+    This method is used to delete a playlist from the server. It takes the ID of the playlist as the parameter and deletes the corresponding playlist file.
+
+    If the playlist_id is None, it will raise an HTTPException with status code 400 and the detail message "Invalid Request".
+
+    If the playlist file exists, it will be deleted from the server. If any error occurs during the deletion process, it will raise an HTTPException with status code 500 and the corresponding
+    * error message.
+
+    Example usage:
+        delete_playlist("abc123")
+    """
     if playlist_id is None:
         raise HTTPException(status_code=400, detail="Invalid Request")
 
@@ -115,6 +177,24 @@ async def delete_playlist(playlist_id: str):
 
 @app.get("/download/song")
 async def download_file(song_id: str):
+    """
+    :param song_id: The ID of the song to be downloaded.
+    :return: Returns a StreamingResponse object that streams the file for download.
+
+    This method is used to download a song file based on its ID. It first checks if the song ID is valid, and then searches for the file location in the music directory. If the file is found
+    *, it checks the MD5 checksum of the file against the one stored in the database. If the checksums match, it creates a StreamingResponse object to stream the file for download. The file
+    * is streamed in chunks of 64KB.
+
+    If the song ID is invalid or the file is not found, a HTTPException is raised with the appropriate status code (400 or 404). If there is an error retrieving the song information from
+    * the database or calculating the MD5 checksum, a HTTPException is raised with a status code of 500.
+
+    The content-disposition header of the response is set to suggest the original file name for download.
+
+    Example usage:
+
+        response = download_file(song_id="123")
+        return response
+    """
     if song_id is None:
         raise HTTPException(status_code=400, detail="Invalid Request")
 
@@ -144,11 +224,13 @@ async def download_file(song_id: str):
 
     if md5 is None:
         raise HTTPException(status_code=404, detail="MD5 not found")
+    try:
+        file_md5 = await service.calculate_md5(file_location)
 
-    file_md5 = await service.calculate_md5(file_location)
-
-    if file_md5 != md5:
-        raise HTTPException(status_code=422, detail="MD5 mismatch")
+        if file_md5 != md5:
+            raise HTTPException(status_code=422, detail="MD5 mismatch")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
     # Asynchronous generator to stream the file
     async def file_streamer(filepath):
@@ -173,6 +255,25 @@ async def download_file(song_id: str):
 
 @app.get("/download/image")
 async def download_image(id: str):
+    """
+    :param id: The ID of the image to be downloaded.
+    :return: The image file as a FileResponse object.
+
+    The `download_image` method is an asynchronous function that is used to download an image file based on its ID. It takes in a single parameter `id`, which represents the ID of the image
+    * to be downloaded.
+
+    The method first checks if the `id` parameter is None. If it is, it raises an HTTPException with a status code of 400 and the detail message "Invalid Request".
+
+    Next, the method attempts to find the file location of the image based on the provided ID. It searches for files in the `service.image_dir` directory and checks if the file's name matches
+    * the ID. If no file is found, it raises an HTTPException with a status code of 404 and the detail message "File not found".
+
+    If a matching file is found, the method constructs the full file location path by joining the `service.image_dir` directory path and the file name. It then checks if the image file actually
+    * exists at the constructed file location. If the file does not exist, it raises an HTTPException with a status code of 404 and the detail message "Image not found".
+
+    Finally, if all checks pass, the method returns the image file as a FileResponse object, which allows the file to be downloaded by the client.
+
+    Note: This method may raise an HTTPException with a status code of 500 and an error message if any unexpected exceptions occur during the execution of the method.
+    """
     if id is None:
         raise HTTPException(status_code=400, detail="Invalid Request")
     try:
@@ -192,5 +293,12 @@ async def download_image(id: str):
 
 @app.get("/stop")
 async def stop_service():
+    """
+    Stop Service
+
+    This method stops the service asynchronously and exits the program.
+
+    :return: None
+    """
     await service.stop()
     exit(0)

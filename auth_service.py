@@ -15,12 +15,28 @@ app = service.app
 
 @app.get("/")
 async def root():
+    """
+    :return: The service data fetched by the fetch_service_data function.
+    """
     return await service.fetch_service_data()
 
 
 @app.post("/validate_user")
 async def auth_user(request: Request):
+    """
+    This method `auth_user` is used to validate a user's credentials and generate a token for authentication.
 
+    :param request: A `Request` object representing the HTTP request made to this endpoint.
+    :return: A dictionary containing the validation details and the generated token.
+
+    Raises:
+        HTTPException: if the request is empty or invalid, or if an error occurs during the validation process.
+
+    Example Usage:
+        request = Request()
+        response = await auth_user(request)
+
+    """
     if request is None:
         raise HTTPException(status_code=400, detail="Invalid Request")
 
@@ -52,6 +68,17 @@ async def auth_user(request: Request):
 
 @app.post("/create_user")
 async def create_user(request: Request):
+    """
+    Create a new user.
+
+    :param request: The incoming request object.
+    :type request: Request
+    :return: The response object containing the result of the user creation.
+    :rtype: dict
+    :raises HTTPException 400: If the request is invalid (missing parameters).
+    :raises HTTPException 409: If the user already exists.
+    :raises HTTPException 500: If an internal error occurs during user creation.
+    """
     req = await request.json()
 
     username = req.get("username")
@@ -93,6 +120,14 @@ async def create_user(request: Request):
 
 @app.post("/generate_token")
 async def generate_token(request: Request):
+    """
+    Generate a token for the specified user.
+
+    :param request: Request object containing the user information.
+    :return: Dictionary containing the details of the user and the generated token.
+    :raises HTTPException: If the request is invalid.
+    :raises HTTPException: If an error occurs during token generation.
+    """
     req = await request.json()
 
     username = req.get("username")
@@ -112,6 +147,14 @@ async def generate_token(request: Request):
 
 @app.get("/validate_token")
 async def validate_token(token: str):
+    """
+    :param token: The token to be validated.
+    :return: A dictionary with the detail of the validation result.
+
+    This method is used to validate a token. It takes a token as a parameter and returns a dictionary with the detail of the validation result. If the token is None, it raises an HTTPException
+    * with status code 406 and detail message "Invalid Request". If the token is invalid, it raises an HTTPException with status code 401 and detail message "Invalid Token". If any other
+    * exception occurs during the token validation process, it raises an HTTPException with status code 500 and detail message containing the exception message.
+    """
     if token is None:
         raise HTTPException(status_code=406, detail="Invalid Request")
 
@@ -125,6 +168,14 @@ async def validate_token(token: str):
 
 @app.post("/start_service")
 async def start_service(request: Request):
+    """
+    :param request: The request object containing the client's request data.
+    :return: None
+
+    This method is a POST endpoint that starts a service. It takes a request object as a parameter and does not have a return value.
+    The method tries to execute the start_service_endpoint function with the provided request. If an HTTPException is raised, it is re-raised.
+    If any other exception is raised, it is caught, and a new HTTPException with a 500 status code and the exception message as the detail is raised.
+    """
     try:
         await start_service_endpoint(request)
     except HTTPException:
@@ -134,6 +185,11 @@ async def start_service(request: Request):
 
 @app.delete("/stop")
 async def stop_service():
+    """
+    Stop the service.
+
+    :return: None
+    """
     await service.stop()
     exit(0)
 

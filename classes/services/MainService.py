@@ -130,7 +130,7 @@ class MainService(BaseService):
 
     async def check_services(self):
         """
-        Check the services and perform necessary checks for each service that has exceeded the timeout.
+        Check the status of services and perform service checks asynchronously.
 
         :return: None
         """
@@ -363,10 +363,17 @@ class MainService(BaseService):
 
         start_time = asyncio.get_event_loop().time()
         while asyncio.get_event_loop().time() - start_time < timeout:
-            optimal_service = await self.select_optimal_service(service_type)
-            if optimal_service:
-                # Optimal service found, returning its information
-                return optimal_service
+            try:
+                optimal_service = await self.select_optimal_service(service_type)
+                if optimal_service:
+                    # Optimal service found, returning its information
+                    return optimal_service
+            except FailedServiceCreationException as e:
+                # Log the exception and continue searching for a suitable service instance
+                logger.error(f"Failed to create new instance of {service_type.name}: {e}")
+                return None
+            except Exception:
+                raise
 
             # Wait before retrying to reduce load and give time for the state to change
             await asyncio.sleep(retry_interval)
@@ -398,7 +405,7 @@ class MainService(BaseService):
 
         async with self.services_lock:  # Acquire the lock
             # Early return if no services are registered
-            if not self.services or not any(service.type == service_type.name for service in self.services.values()):
+            if not self.services or not any(service.type.name == service_type.name for service in self.services.values()):
                 need_new_service = True
 
         if need_new_service:
@@ -406,7 +413,7 @@ class MainService(BaseService):
 
         async with self.services_lock:  # Acquire the lock
             coroutines = [service.calc_score() for service in self.services.values() if
-                          service.type == service_type.name]
+                          service.type.name == service_type.name]
 
         scores = await asyncio.gather(*coroutines)
         # Re-acquire the lock for accessing self.services again
@@ -416,14 +423,22 @@ class MainService(BaseService):
                 need_new_service = True
 
         if need_new_service:
-            return await self.create_new_instance(service_type)
+            try:
+                return await self.create_new_instance(service_type)
+            except FailedServiceCreationException as e:
+                logger.error(f"Failed to create new instance of {service_type.name}: {e}")
+                raise
+            except Exception as e:
+                logger.error(f"Unexpected error while creating new instance of {service_type.name}: {e}")
+                logger.error(f"Unexpected error while creating new instance of {service_type.name}: {e}")
+                raise ValueError(f"Unexpected error while creating new instance of {service_type.name}: {e}")
 
         async with self.services_lock:
-            score_service_pairs = list(zip(scores, [s for s in self.services.values() if s.type == service_type.name]))
+            score_service_pairs = list(zip(scores, [s for s in self.services.values() if s.type.name == service_type.name]))
 
         optimal_service = max(score_service_pairs, key=lambda pair: pair[0])[1]
 
-        return optimal_service.url
+        return optimal_service
 
     async def wait_for_service(self, service_type: ServiceType, current_services):
         """
@@ -447,25 +462,29 @@ class MainService(BaseService):
 
         start_time = asyncio.get_event_loop().time()
         timeout = 30 * 5  # 5 intervals of 30 seconds
-        while asyncio.get_event_loop().time() - start_time < timeout:
-            async with self.services_lock:
-                # Ensure thread-safe access to self.services
-                updated_services = [service for service in self.services.values() if service.type == service_type.name]
+        try:
+            while asyncio.get_event_loop().time() - start_time < timeout:
+                async with self.services_lock:
+                    # Ensure thread-safe access to self.services
+                    updated_services = [service for service in self.services.values() if service.type == service_type.name]
 
-            # Check for the addition of new services by comparing the count against the snapshot
-            if len(updated_services) > len(current_services):
-                # Assuming the new service is the one added last; adjust as needed
-                new_service = max(updated_services, key=lambda s: s.creation_time)
-                logger.info(f"New service of type {service_type.name} is now operational: {new_service.name}.")
-                return new_service
+                # Check for the addition of new services by comparing the count against the snapshot
+                if len(updated_services) > len(current_services):
+                    # Assuming the new service is the one added last; adjust as needed
+                    new_service = max(updated_services, key=lambda s: s.creation_time)
+                    logger.info(f"New service of type {service_type.name} is now operational: {new_service.name}.")
+                    return new_service
 
-            # Use an exponential backoff or a fixed delay for retries to minimize resource usage
-            await asyncio.sleep(1)  # Consider adjusting this based on your application's needs
+                # Use an exponential backoff or a fixed delay for retries to minimize resource usage
+                await asyncio.sleep(1)  # Consider adjusting this based on your application's needs
 
-        # Log and handle the timeout scenario
-        logger.error(f"Timeout waiting for a new service of type {service_type.name} to become operational.")
-        return None
-
+            # Log and handle the timeout scenario
+            logger.error(f"Timeout waiting for a new service of type {service_type.name} to become operational.")
+            raise TimeoutError(f"Timeout waiting for a new service of type {service_type.name} to become operational.")
+        except TimeoutError:
+            raise TimeoutError(f"Timeout waiting for a new service of type {service_type.name} to become operational.")
+        except Exception:
+            raise
     async def create_new_instance(self, service_type: ServiceType, existing_services=True):
         """
         :param service_type: The type of service to create a new instance of.
@@ -501,24 +520,24 @@ class MainService(BaseService):
         try:
             current_services = []
 
-            if not existing_services:
+            if not existing_services or len(current_services) == 0:
                 await start_service(self.service_url, service_type)
 
             else:
                 async with self.services_lock:
                     current_services = [service for service in self.services.values() if
-                                        service.type == service_type.name]
+                                        service.type.name == service_type.name]
 
                     # Calculate scores for available services to determine if a new instance is needed
                     coroutines = [service.calc_available_score() for service in self.services.values() if
-                                  service.type == service_type]
+                                  service.type.name == service_type]
 
                 scores = await asyncio.gather(*coroutines)
                 # If existing services are sufficient, select the optimal service
 
                 async with self.services_lock:
                     score_service_pairs = list(
-                        zip(scores, [s for s in self.services.values() if s.type == service_type.name]))
+                        zip(scores, [s for s in self.services.values() if s.name == service_type.name]))
 
                 optimal_service = max(score_service_pairs, key=lambda pair: pair[0])[1]
 
@@ -535,9 +554,11 @@ class MainService(BaseService):
 
             logger.info(f"Successfully created and registered new service instance: {new_service.name}.")
             return new_service
+        except TimeoutError:
+            raise
         except Exception as e:
             logger.error(f"Failed to create a new instance of {service_type.name}: {e}")
-            raise FailedServiceCreationException(f"Failed to create a new instance of {service_type.name}: {e}")
+            raise NoAvailableServicesException(f"Failed to create a new instance of {service_type.name}: {e}")
 
     async def check_and_update_service(self, service):
         """
@@ -567,12 +588,15 @@ class MainService(BaseService):
 
             if response.status_code == 200:
                 logger.info(f"Service {service.name} online.")
-                service.last_update = time()
+                service.last_update = datetime.now()
                 return True
 
         except HTTPStatusError as e:
             logger.error(f"Service {service.name} returned status code {e.response.status_code}. "
                          f"With Error: {e.response.text}")
+
+        except Exception as e:
+            logger.error(f"Failed to check and update service {service.name}: {e}")
 
         return False
 

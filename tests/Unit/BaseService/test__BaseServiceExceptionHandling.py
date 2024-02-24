@@ -7,7 +7,7 @@ from httpx import HTTPStatusError
 from classes.services.BaseService import BaseService, ServiceType
 
 
-class TestBaseServiceExceptionHandling(unittest.IsolatedAsyncioTestCase):
+class test_BaseServiceExceptionHandling(unittest.IsolatedAsyncioTestCase):
     @patch('utils.service_utils.handle_rest_request', new_callable=AsyncMock)
     async def test_service_exception_handling_http_exception(self, mock_handle_rest_request):
         mock_handle_rest_request.side_effect = HTTPStatusError(message="Error", request=None, response=None)

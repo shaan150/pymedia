@@ -1,4 +1,4 @@
-import DatabaseAsyncQuery
+from utils import DatabaseAsyncQuery
 from classes.enum.ServiceType import ServiceType
 from classes.services.ExtendedService import ExtendedService
 

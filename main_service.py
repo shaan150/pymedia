@@ -10,11 +10,27 @@ app = service.app
 
 @app.get("/")
 async def root():
+    """
+    Returns the main server status.
+
+    :return: A dictionary containing the server status.
+    :rtype: dict
+    """
     return {"detail": "Main Server Active"}
 
 
 @app.get("/debug")
 async def debug():
+    """
+    :return: A dictionary containing the following information:
+        - "services": A dictionary representing the services along with their details. Each service is represented by its URL and contains the following information:
+            - "name": The name of the service.
+            - "other_details": A dictionary containing additional details of the service. This can be obtained by calling the 'to_dict()' method on the 'service_info' object if it exists
+    *, otherwise an empty dictionary.
+        - "services_with_scores": A dictionary mapping the URLs of the services to their respective scores.
+        - "services_with_availability": A dictionary mapping the URLs of the services to their respective availability scores.
+
+    """
     services = service.services
     services_with_scores = {}
     services_with_availability = {}
@@ -43,6 +59,15 @@ async def debug():
 
 @app.get("/get_service")
 async def get_service(service_type: ServiceType):
+    """
+    Gets the optimal service based on the provided service type.
+
+    :param service_type: The type of service to retrieve.
+    :type service_type: ServiceType
+    :return: The optimal service for the given service type.
+    :rtype: Service
+    :raises HTTPException: If the request is invalid or no service is found.
+    """
     if service_type is None:
         raise HTTPException(status_code=400, detail="Invalid Request")
 
@@ -59,16 +84,34 @@ async def get_service(service_type: ServiceType):
 
 @app.get("/get_services")
 async def get_services(_ = Depends(service.verify_ip)):
+    """
+        Retrieve the services.
+
+        :param _: The IP verification dependency.
+        :return: A dictionary containing the services.
+    """
     return {"services": [service.to_dict() for service in service.services.values()]}
 
 
 @app.get("/secret_key")
 async def get_secret_key(_=Depends(service.verify_ip)):
+    """
+    :param _: This parameter is ignored and does not have any effect on the method. It is used to satisfy the Depends dependency in FastAPI.
+
+    :return: This method returns a dictionary containing the secret key. The key is "secret_key" and its value is obtained from the `service.secret_key`.
+    """
     return {"secret_key": service.secret_key}
 
 
 @app.post("/update_or_add_service")
 async def update_service(request: Request):
+    """
+    Updates or adds a service.
+
+    :param request: The request containing the service information.
+    :return: A dictionary with a detail message indicating if the service was updated or added successfully.
+    :raises HTTPException: If the request is invalid or there is an error updating or adding the service.
+    """
     if request is None:
         raise HTTPException(status_code=400, detail="Invalid Request")
 
@@ -106,6 +149,26 @@ async def update_service(request: Request):
 
 @app.delete("/remove_service/{service_url}")
 async def remove_service(service_url: str):
+    """
+    :param service_url: The URL of the service to be removed.
+    :return: A dictionary containing the detail of the removal operation.
+
+    This method is used to remove a service by its URL. It sends a DELETE request to the '/remove_service/{service_url}' endpoint.
+
+    Example usage:
+        response = await remove_service('http://example.com/service1')
+
+    The method first checks if a service URL is provided. If not, it raises an HTTPException with a status code 400 and a detail message indicating the lack of a service URL.
+
+    Next, it tries to call the 'del_service' function from the 'service' module passing the service URL as an argument. If an HTTPException with a status code different from 404 is raised
+    *, it is re-raised.
+
+    If any other exception is raised during the deletion process, an HTTPException with a status code 500 is raised with a detail message indicating the failure.
+
+    If the deletion is successful, the method returns a dictionary with a detail message indicating the successful removal of the service at the specified URL.
+
+    Note: URL decoding might be required depending on how the URL is passed. The 'urllib.parse.unquote(service_url)' function can be used for decoding if needed.
+    """
     # URL decoding might be necessary depending on how you pass the URL
     # You can use urllib.parse.unquote(service_url) if needed
 
@@ -123,13 +186,3 @@ async def remove_service(service_url: str):
         raise HTTPException(status_code=500, detail="Failed to remove the service with error: " + str(e))
 
     return {"detail": f"Service at {service_url} removed successfully"}
-
-
-@app.get("/database_connection")
-async def database_connection():
-    """
-    Endpoint to retrieve the database connection string.
-    """
-    if not service.db_service_url:
-        raise HTTPException(status_code=404, detail="Database URL not configured")
-    return {"database_url": service.db_service_url}
