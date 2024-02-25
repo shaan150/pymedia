@@ -13,9 +13,7 @@ from classes.services.ClientService import ClientService
 from utils import service_utils
 from utils.service_utils import start_service_endpoint
 
-debug = os.getenv("DEBUG", "True") == "True"
-
-service = ClientService(debug)
+service = ClientService()
 templates = Jinja2Templates(directory="templates")
 
 app = service.app
@@ -52,6 +50,24 @@ async def validate_user_session(request: Request):
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Error validating user session")
 
 
+@app.get("/service_info")
+async def get_service_info():
+    """
+    Get the service info for a given service type.
+
+    :param request: The request object.
+    :param service_type: The service type.
+    :return: The service info for the given service type.
+    :raises HTTPException: If the service type is invalid or an error occurs during the process.
+    """
+    try:
+        return await service.fetch_service_data()
+    except Exception as e:
+        logger.error(f"Error fetching service data: {e}")
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                            detail="Error fetching service data")
+
+
 @app.get("/", response_class=HTMLResponse)
 async def root(request: Request):
     """
@@ -72,13 +88,12 @@ async def home(request: Request, _=Depends(validate_user_session)):
     if result:
         return result
     error = ''
-
     try:
         db_service_url = await service.get_service_url(ServiceType.DATABASE_SERVICE)
         file_service_url = await service.get_service_url(ServiceType.FILE_SERVICE)
         # check if this service is best to handle the request
-
-        req = await service.service_exception_handling(db_service_url, "songs", "GET")
+        params = {"username": request.cookies.get('username')}
+        req = await service.service_exception_handling(db_service_url, "songs", "GET", params=params)
         songs = req[0]
         for song in songs:
             song_id = song.get("song_id")
@@ -177,7 +192,6 @@ async def login_verify(request: Request, username: str = Form(...), password: st
     try:
         if username is None or password is None:
             raise HTTPException(status_code=422, detail="Invalid Username Or Password, please try again")
-
         data = {"username": username, "password": password}
         service_url = await service.get_service_url(ServiceType.AUTH_SERVICE)
         login_response = await service.service_exception_handling(service_url, "validate_user", "POST", data=data)
@@ -192,7 +206,7 @@ async def login_verify(request: Request, username: str = Form(...), password: st
                 return templates.TemplateResponse("login.html",
                                                   {"request": request, "error": "Login failed. Please try again."})
         else:
-            detail = login_response.json().get("detail", "Invalid credentials")
+            detail = login_response[0]["detail"]
             return templates.TemplateResponse("login.html", {"request": request, "error": detail})
 
     except HTTPException as http_exception:
@@ -207,7 +221,6 @@ async def login_verify(request: Request, username: str = Form(...), password: st
 @app.get("/logout")
 async def logout(response: Response):
     """
-    :param response: A Response object that represents the HTTP response to be returned.
     :return: The modified response object with cleared cookies and a redirect URL.
 
     This method is an endpoint for handling user logout. It takes a Response object as a parameter and modifies it to clear the authentication token and username cookies. It then sets the
@@ -367,10 +380,10 @@ async def upload_song(request: Request, _=Depends(validate_user_session), song_n
             raise HTTPException(status_code=400, detail="Invalid Details, please try again")
 
         if image.content_type not in ["image/jpeg", "image/png"]:
-            raise HTTPException(status_code=400, detail="Invalid Image File Type")
+            raise HTTPException(status_code=422, detail="Invalid Image File Type")
 
         if mp3_file.content_type != "audio/mpeg":  # Correct MIME type for MP3 files
-            raise HTTPException(status_code=400, detail="Invalid Audio File Type")
+            raise HTTPException(status_code=422, detail="Invalid Audio File Type")
 
         db_service_url = await service.get_service_url(ServiceType.DATABASE_SERVICE)
         file_service_url = await service.get_service_url(ServiceType.FILE_SERVICE)
@@ -388,11 +401,14 @@ async def upload_song(request: Request, _=Depends(validate_user_session), song_n
         mp3_content = await mp3_file.read()
         await image.seek(0)
         await mp3_file.seek(0)
+        # get name of the files with extension
+        image_name = image.filename
+        mp3_name = mp3_file.filename
 
         # Make sure service_exception_handling can handle file uploads correctly
         files = {
-            "image_file": ("image_filename.png", image_content, image.content_type),
-            "mp3_file": ("mp3_filename.mp3", mp3_content, mp3_file.content_type)
+            "image_file": (image_name, image_content, image.content_type),
+            "mp3_file": (mp3_name, mp3_content, mp3_file.content_type)
         }
         data = {"song_id": song_id}
         await service.service_exception_handling(file_service_url, "upload/song", "PUT", params=data, files=files)
@@ -412,58 +428,6 @@ async def upload_song(request: Request, _=Depends(validate_user_session), song_n
         return templates.TemplateResponse("upload.html", {"request": request, "error": e.detail})
     except Exception as e:
         return templates.TemplateResponse("upload.html", {"request": request, "error": str(e)})
-
-
-@app.get("/songs/song")
-async def get_song(request: Request, song_id: str, _=Depends(validate_user_session)):
-    """
-    :param request: The HTTP request object.
-    :param song_id: The ID of the song to retrieve.
-    :param _: A dependency object that validates the user session.
-    :return: A TemplateResponse object containing the rendered HTML template.
-
-    This method is an endpoint for retrieving a specific song by ID. The method takes in an HTTP request object, the ID of the song, and a user session validation dependency. It returns
-    * a TemplateResponse object that contains the rendered HTML template for displaying the song information.
-
-    The method begins by setting up the endpoint and checking for any errors. If there is an error, it returns the error result. Otherwise, it proceeds to retrieve the service URLs for the
-    * database service and the file service.
-
-    The method then makes a service call to the database service to get the information for the specified song ID. It also constructs the URL for downloading the song from the file service
-    *.
-
-    Finally, it returns a TemplateResponse object, passing the request, song information, and song URL as template variables. If there is an HTTPException with a status code of 401, it redirects
-    * the user to the login page. Any other exceptions are caught and an error message is added to the template response.
-
-    Example usage:
-
-    request = Request()
-    song_id = "123"
-    response = await get_song(request, song_id)
-    """
-    result = await endpoint_setup(request, "/songs/song")
-    if result:
-        return result
-    error = ''
-
-    try:
-
-        db_service_url = await service.get_service_url(ServiceType.DATABASE_SERVICE)
-        file_service_url = await service.get_service_url(ServiceType.FILE_SERVICE)
-
-        song_info = await service.service_exception_handling(db_service_url, "songs/song", "GET",
-                                                             params={"song_id": song_id})
-        song = f"http://{file_service_url}/download/song?song_id={song_id}"
-
-        return templates.TemplateResponse("song.html", {"request": request, "song_info": song_info, "song": song})
-    except HTTPException as e:
-        if e.status_code == 401:
-            return RedirectResponse(url="/login", status_code=303)
-        error += f"\nError getting song: {e.detail}"
-        return templates.TemplateResponse("song.html", {"request": request, "error": error})
-    except Exception as e:
-        error += f"\nSystem Error: {e}"
-        return templates.TemplateResponse("song.html", {"request": request, "error": error})
-
 
 @app.get("/services")
 async def manage_services(request: Request, _=Depends(validate_user_session)):
@@ -588,10 +552,10 @@ async def get_songs(request: Request, _=Depends(validate_user_session)):
 
         return templates.TemplateResponse("songs.html", {"request": request, "songs": songs, "error": error})
     except HTTPException as e:
-        if e.status_code == 401:
-            return RedirectResponse(url="/login", status_code=303)
-        error += f"\nError getting songs: {e.detail}"
-        return templates.TemplateResponse("songs.html", {"request": request, "error": error})
+        if e.status_code != 404 and e.status_code != 400:
+            logger.debug(f"Error getting songs: {e.detail}")
+            error += f"\nError getting songs: {e.detail}"
+        return templates.TemplateResponse("songs.html", {"request": request, "error": error, "songs": []})
     except Exception as e:
         error += f"\nSystem Error: {e}"
         return templates.TemplateResponse("songs.html", {"request": request, "error": error})
@@ -636,13 +600,35 @@ async def stop_service(service_url):
     :return: A dictionary indicating the status of the service stop operation.
     """
     try:
-        await service.service_exception_handling(service_url, "stop", "DELETE", params={"service_url": service_url})
+        await service.service_exception_handling(service_url, "stop", "DELETE")
     except HTTPException:
         raise
     except Exception as e:
         logger.error(f"Error stopping service: {e}")
         raise HTTPException(status_code=500, detail=f"Error stopping service: {e}")
     return {"status": "Service Stopped"}
+
+
+@app.get("/error", response_class=HTMLResponse)
+async def error(request: Request):
+    """
+    :param request: The request object containing information about the HTTP request.
+    :return: A TemplateResponse object with the rendered error message.
+
+    This method is used to handle error messages. It retrieves the error message from the request cookies and renders the "error.html" template with the error message.
+
+    Example usage:
+    ```
+    response = await error(request)
+    ```
+
+    """
+    error_message = request.cookies.get('error_message')
+    if error_message:
+        response = templates.TemplateResponse("error.html", {"request": request, "error": error_message})
+        response.delete_cookie("error_message")
+        return response
+    return templates.TemplateResponse("error.html", {"request": request})
 
 
 @app.exception_handler(StarletteHTTPException)
@@ -665,8 +651,9 @@ async def custom_http_exception_handler(request: Request, exc: StarletteHTTPExce
         # Handle unauthorized error, potentially redirecting
         return RedirectResponse(url="/login", status_code=status.HTTP_303_SEE_OTHER)
 
-    # For other HTTP exceptions, return a generic JSON response or customize as needed
-    return JSONResponse(content={"error": exc.detail}, status_code=exc.status_code)
+    redirect_response = RedirectResponse(url="/error", status_code=303)
+    redirect_response.set_cookie(key="error_message", value=exc.detail, httponly=True)
+    return redirect_response
 
 
 async def redirect_to_optimal_service(request: Request, endpoint: Optional[str] = None):

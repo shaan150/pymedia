@@ -4,38 +4,25 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Register</title>
-    <link href="http://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="/templates/css/login.css">
 </head>
 <body>
-<div class="container mt-5">
-    <div class="row">
-        <div class="col-md-6 offset-md-3">
-            <h2 class="text-center">Sign Up</h2>
-            <form action="/register" method="post">
-                <div class="form-group">
-                    <label for="username">Username</label>
-                    <input type="text" class="form-control" id="username" name="username" placeholder="Enter username" required>
-                </div>
-                <div class="form-group">
-                    <label for="email">Email address</label>
-                    <input type="email" class="form-control" id="email" name="email" placeholder="Enter email" required>
-                </div>
-                <div class="form-group">
-                    <label for="password">Password</label>
-                    <input type="password" class="form-control" id="password" name="password" placeholder="Password" required>
-                </div>
-                {% if error %}
-                    <div class="alert alert-danger" role="alert">
-                        {{ error }}
-                    </div>
-                {% endif %}
-                <button type="submit" class="btn btn-primary">Sign Up</button>
-            </form>
+<div class="login-container">
+    <form class="login-form" action="/register" method="post"> <!-- Add this line -->
+        <h1>Register</h1>
+        <hr> <!-- Line under the title -->
+        <!-- Error message container -->
+        <div id="error-message" class="error-message" style="{{ 'display: none;' if not error else '' }}">
+            {{ error }}
         </div>
-    </div>
+        <label for="username"><b>Username</b></label>
+        <input type="text" id="username" name="username" placeholder="username" required>
+        <label for="email"><b>Email</b></label>
+        <input type="text" id="email" name="email" placeholder="email" required>
+        <label for="password"><b>Password</b></label>
+        <input type="password" id="password" name="password" placeholder="Enter your password" required>
+        <button type="submit">Register</button>
+    </form>
 </div>
-<script src="http://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
-<script src="http://cdn.jsdelivr.net/npm/@popperjs/core@2.5.2/dist/umd/popper.min.js"></script>
-<script src="http://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
 </body>
 </html>

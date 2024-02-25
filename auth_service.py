@@ -56,7 +56,6 @@ async def auth_user(request: Request):
         hashed_password = base64.b64encode(hashed_password).decode('utf-8')
         user = {"username": username, "password": hashed_password}
         await service.service_exception_handling(db_service_url, "users/user/validate", "POST", data=user)
-
         token = await service.generate_token(username)
 
         return {"detail": f"{username} validated", "token": token}
@@ -91,7 +90,7 @@ async def create_user(request: Request):
     try:
         db_service_url = await service.get_service_url(ServiceType.DATABASE_SERVICE)
         params = {"username": username}
-        user = await service.service_exception_handling(db_service_url, "users/user", "GET", params=params)
+        await service.service_exception_handling(db_service_url, "users/user", "GET", params=params)
         # if user already exists raise a 409 error
         raise HTTPException(status_code=409, detail=f"User {username} already exists")
     except HTTPException as e:
@@ -116,34 +115,6 @@ async def create_user(request: Request):
     except Exception as e:
         logger.error(f"User could not be created, due to an internal error {str(e)}")
         raise HTTPException(status_code=500, detail="User could not be created, due to an internal error")
-
-
-@app.post("/generate_token")
-async def generate_token(request: Request):
-    """
-    Generate a token for the specified user.
-
-    :param request: Request object containing the user information.
-    :return: Dictionary containing the details of the user and the generated token.
-    :raises HTTPException: If the request is invalid.
-    :raises HTTPException: If an error occurs during token generation.
-    """
-    req = await request.json()
-
-    username = req.get("username")
-
-    if username is None:
-        raise HTTPException(status_code=400, detail="Invalid Request")
-
-    try:
-        params = {"username": username}
-        await service.service_exception_handling(service.db_service_url, "users/user", "GET", params=params)
-        token = await service.generate_token(username)
-        return {"detail": f"{username} logged in successfully", "token": token}
-    except HTTPException:
-        raise
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/validate_token")
 async def validate_token(token: str):

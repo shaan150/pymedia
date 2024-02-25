@@ -1,9 +1,11 @@
 import asyncio
 import json
 import logging
+import os
 import socket
 import sys
 
+import requests
 import uvicorn
 import argparse
 
@@ -23,21 +25,25 @@ secret_key = None
 if args.service_type is None:
     # Display the service types
     print("Please select a service type")
-    # Display the service types with a number
+    allowed_numbers = []
+    # Display the service types with a number excluding database and file service
     for i, service_type in enumerate(ServiceType):
-        print(f"{i + 1}. {service_type.name}")
+        if service_type.value != "database_service" and service_type.value != "file_service":
+            allowed_numbers.append(i + 1)
+            print(f"{i + 1}. {service_type.name}")
 
     # Ask user for service type
     while True:
         service_type = input("Enter service type: ")
         # check if the service type is valid number and within the range of the service types
-        if service_type.isdigit() and 0 < int(service_type) <= len(ServiceType):
+        if service_type.isdigit() and 0 < int(service_type) <= len(ServiceType) and int(service_type) in allowed_numbers:
             # get the service type from the enum by the number entered by the user
             service_type = list(ServiceType)[int(service_type) - 1].value
             break
 
         print(
-            "Invalid service type. Must be either 'auth_service', 'media_engine', 'client_service', or 'main_service'")
+            "Invalid service type. Must be either 'auth_service', 'client_service', or 'main_service'. "
+            "please choose a valid number of the service type")
 else:
     service_type = args.service_type
     # Convert the service type to ServiceType enum and ensure it's a valid service type
@@ -52,9 +58,6 @@ s.bind(("", 0))
 s.listen(1)
 service_port = s.getsockname()[1]
 s.close()
-
-# After determining the service port
-print(f"ServicePort: {service_port}")
 
 main_service_url = None
 
@@ -76,8 +79,24 @@ if service_type != "main_service":
             while True:
                 main_service_url = input("Enter main service url: ")
                 if main_service_url:
-                    break
-                print("Invalid IP")
+                    # check if the main service url is valid and doesn't have http or https
+                    if "http://" in main_service_url or "https://" in main_service_url:
+                        print("Invalid URL, please enter a valid URL without http or https")
+                    elif main_service_url.count(".") != 3:
+                        print("Invalid IP, Please Enter In The Format: xxx.xxx.xxx.xxx:xxxx")
+                    elif main_service_url.count(":") != 1:
+                        print("Invalid IP, Please Enter With Port Number: xxx.xxx.xxx.xxx:xxxx")
+                    else:
+                        # check if the main service url is valid by trying to connect to it on it's root
+                        try:
+                            response = requests.get("http://"+main_service_url)
+                            if response.status_code == 200:
+                                print("Service is up and responding.")
+                                break
+                            else:
+                                print(f"Service responded with status code: {response.status_code}")
+                        except Exception as e:
+                            print("Service is down or not responding")
         else:
             raise Exception("Main Service URL is required for auto setup")
 
@@ -99,11 +118,13 @@ can_launch = True
 
 if __name__ == "__main__":
     if can_launch:
-        # Set the event loop policy to SelectorEventLoopPolicy on Windows
         try:
+            os.environ["DEBUG"] = "False"
             logging.getLogger("asyncio").setLevel(logging.WARNING)
             logging.getLogger("uvicorn").setLevel(logging.WARNING)
-            print(f"http://{socket.gethostname()}:{service_port}")
+            # After determining the service port
+            print(f"ServicePort: {service_port}")
+            print(f"http://{socket.gethostbyname(socket.gethostname())}:{service_port}")
             uvicorn.run(f"{service_type}:app", host="0.0.0.0", port=service_port, reload=False)
         except Exception as e:
             print(f"Error: {e}")

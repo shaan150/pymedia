@@ -20,7 +20,7 @@ def create_tables_sync():
 
     :return: None
     """
-    conn = sqlite3.connect("../media_db.db")
+    conn = sqlite3.connect("media_db.db")
     try:
         cursor = conn.cursor()
         tables_sql = {
@@ -86,7 +86,7 @@ def create_user_sync(username, password, salt, email):
     :param email: The email address of the user.
     :return: True if the user was successfully created, False otherwise.
     """
-    conn = sqlite3.connect("../media_db.db")
+    conn = sqlite3.connect("media_db.db")
     try:
         cursor = conn.cursor()
         cursor.execute("INSERT INTO users (username, password, salt, email) VALUES (?, ?, ?, ?)",
@@ -124,7 +124,7 @@ def get_user_salt_sync(username):
     :return: The salt associated with the given username, or None if the user does not exist.
 
     """
-    conn = sqlite3.connect("../media_db.db")
+    conn = sqlite3.connect("media_db.db")
     try:
         cursor = conn.cursor()
         cursor.execute("SELECT salt FROM users WHERE username = ?", (username,))
@@ -146,7 +146,7 @@ def get_user_sync(username):
     :param username: The username of the user to retrieve from the database.
     :return: A tuple containing the username, email, and salt of the user with the specified username.
     """
-    conn = sqlite3.connect("../media_db.db")
+    conn = sqlite3.connect("media_db.db")
     try:
         cursor = conn.cursor()
         cursor.execute("SELECT username, email, salt FROM users WHERE username = ?", (username,))
@@ -169,7 +169,7 @@ def get_user_email_sync(email):
     :return: The email of the user as a string, or None if the email does not exist in the database.
 
     """
-    conn = sqlite3.connect("../media_db.db")
+    conn = sqlite3.connect("media_db.db")
     try:
         cursor = conn.cursor()
         cursor.execute("SELECT username FROM users WHERE email = ?", (email,))
@@ -196,7 +196,7 @@ def get_user_by_password_sync(username, password):
     :param password: The password of the user.
     :return: A tuple containing the username of the user if found, or None if not found.
     """
-    conn = sqlite3.connect("../media_db.db")
+    conn = sqlite3.connect("media_db.db")
     try:
         cursor = conn.cursor()
         cursor.execute("SELECT username FROM users WHERE username = ? AND password = ?", (username, password))
@@ -226,7 +226,7 @@ def create_song_sync(song_id, song_name, artist, md5, username):
     :return: A boolean value indicating whether the song was successfully created.
 
     """
-    conn = sqlite3.connect("../media_db.db")
+    conn = sqlite3.connect("media_db.db")
     try:
         cursor = conn.cursor()
         cursor.execute("INSERT INTO songs (song_id, song_name, artist, md5, username) VALUES (?, ?, ?, ?, ?)",
@@ -259,7 +259,7 @@ def get_song_sync(song_id):
     This method connects to the media database, retrieves the song with the given song_id,
     and returns it as a result. If no song is found with the given ID, None is returned.
     """
-    conn = sqlite3.connect("../media_db.db")
+    conn = sqlite3.connect("media_db.db")
     try:
         cursor = conn.cursor()
         cursor.execute("SELECT * FROM songs WHERE song_id = ?", (song_id,))
@@ -278,7 +278,7 @@ async def get_song(song_id):
     return await run_in_executor(get_song_sync, song_id)
 
 
-def get_songs_sync(song_name, artist):
+def get_songs_sync(song_name, artist, username=None):
     """
     :param song_name: The name of the song to search for (optional)
     :param artist: The artist of the song to search for (optional)
@@ -295,12 +295,15 @@ def get_songs_sync(song_name, artist):
     songs = get_songs_sync("Song Name", "Artist")
     print(songs)
     """
-    conn = sqlite3.connect("../media_db.db")
+    conn = sqlite3.connect("media_db.db")
     try:
         cursor = conn.cursor()
 
         query = "SELECT * FROM songs"
-        if song_name is not None and artist is not None:
+        if song_name is not None and artist is not None and username is not None:
+            query += " WHERE song_name = ? AND artist = ? AND username = ?"
+            cursor.execute(query, (song_name, artist, username))
+        elif song_name is not None and artist is not None:
             query += " WHERE song_name = ? AND artist = ?"
             cursor.execute(query, (song_name, artist))
         elif song_name is not None:
@@ -309,6 +312,9 @@ def get_songs_sync(song_name, artist):
         elif artist is not None:
             query += " WHERE artist = ?"
             cursor.execute(query, (artist,))
+        elif username is not None:
+            query += " WHERE username = ?"
+            cursor.execute(query, (username,))
         else:
             cursor.execute(query)
 
@@ -317,13 +323,13 @@ def get_songs_sync(song_name, artist):
         conn.close()
 
 
-async def get_songs(song_name, artist):
+async def get_songs(song_name, artist, username=None):
     """
     :param song_name: The name of the song.
     :param artist: The name of the artist.
     :return: A list of songs matching the given song_name and artist.
     """
-    return await run_in_executor(get_songs_sync, song_name, artist)
+    return await run_in_executor(get_songs_sync, song_name, artist, username)
 
 
 def create_playlist_sync(playlist_id, playlist_name, username):
@@ -337,7 +343,7 @@ def create_playlist_sync(playlist_id, playlist_name, username):
     * changes. The method then returns True if the playlist was created successfully, or False otherwise.
 
     """
-    conn = sqlite3.connect("../media_db.db")
+    conn = sqlite3.connect("media_db.db")
     try:
         cursor = conn.cursor()
         cursor.execute("INSERT INTO playlists (playlist_id, playlist_name, username) VALUES (?, ?, ?)",
@@ -380,7 +386,7 @@ def get_songs_by_playlist_sync(playlist_id):
     Please note that this method assumes the existence of a database named 'media_db.db' in the parent directory of the current script.
 
     """
-    conn = sqlite3.connect("../media_db.db")
+    conn = sqlite3.connect("media_db.db")
     try:
         cursor = conn.cursor()
         # create a link between the playlist and the songs for the song details
@@ -416,7 +422,7 @@ def get_playlists_sync(username, playlist_name, playlist_id):
         >>>     print(playlist)
         ('My Playlist', 'john_doe', 1, '2021-07-15 10:30:00')
     """
-    conn = sqlite3.connect("../media_db.db")
+    conn = sqlite3.connect("media_db.db")
     try:
         cursor = conn.cursor()
         query = "SELECT * FROM playlists"
@@ -462,7 +468,7 @@ def add_song_to_playlist_sync(playlist_id, song_id):
     :return: True if the song was successfully added to the playlist, False otherwise.
 
     """
-    conn = sqlite3.connect("../media_db.db")
+    conn = sqlite3.connect("media_db.db")
     try:
         cursor = conn.cursor()
         cursor.execute("INSERT INTO playlist_songs (playlist_id, song_id) VALUES (?, ?)",
@@ -492,7 +498,7 @@ def remove_song_from_playlist_sync(playlist_id, song_id):
     :param song_id: The ID of the song to be removed.
     :return: True if the song was successfully removed, False otherwise.
     """
-    conn = sqlite3.connect("../media_db.db")
+    conn = sqlite3.connect("media_db.db")
     try:
         cursor = conn.cursor()
         cursor.execute("DELETE FROM playlist_songs WHERE playlist_id = ? AND song_id = ?",
@@ -509,7 +515,7 @@ def get_playlist_songs_sync(playlist_id):
     :return: A list of tuples representing the songs in the playlist.
 
     """
-    conn = sqlite3.connect("../media_db.db")
+    conn = sqlite3.connect("media_db.db")
     try:
         cursor = conn.cursor()
         cursor.execute("SELECT * FROM playlist_songs WHERE playlist_id = ?", (playlist_id,))

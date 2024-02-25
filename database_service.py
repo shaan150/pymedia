@@ -41,6 +41,15 @@ async def create_user_endpoint(user: UserAccount):
         raise HTTPException(status_code=400, detail="Invalid Request")
 
     try:
+        result = await get_user(user.username)
+        if result:
+            raise HTTPException(status_code=409, detail="User already exists")
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+    try:
         result = await create_user(user.username, user.password, user.salt, user.email)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -155,7 +164,7 @@ async def create_song_endpoint(song: Song):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
     if not result:
-        raise HTTPException(status_code=400, detail="Could not create song")
+        raise HTTPException(status_code=422, detail="Could not create song")
 
     return {"detail": "Song created successfully", "song_id": result}
 
@@ -181,41 +190,13 @@ async def get_song_endpoint(song_id: str):
 
     if song is None:
         raise HTTPException(status_code=404, detail="Song not found")
-    song_json = {"song_id": song[0], "song_name": song[1], "artist": song[2], "md5": song[3], "username": song[4]}
+    song_json = {"song_id": song[0], "song_name": song[1], "artist": song[2],
+                 "md5": song[3], "username": song[4]}
     return song_json
 
 
-@app.post("/playlists/playlist/create")
-async def create_playlist_endpoint(playlist: Playlist):
-    """
-    :param playlist: The playlist object containing the playlist details.
-    :return: Returns a dictionary with a message indicating the success of creating the playlist.
-
-    """
-    if playlist is None:
-        raise HTTPException(status_code=400, detail="Invalid Request")
-
-    try:
-        result = await get_playlists(playlist.username, playlist.playlist_name)
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
-    if result:
-        raise HTTPException(status_code=409, detail="Playlist already exists")
-
-    try:
-        result = await create_playlist(playlist.playlist_id, playlist.playlist_name, playlist.username)
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
-    if not result:
-        raise HTTPException(status_code=400, detail="Could not create playlist")
-
-    return {"message": "Playlist created successfully"}
-
-
 @app.get("/songs")
-async def get_songs_endpoint(name: Optional[str] = None, artist: Optional[str] = None):
+async def get_songs_endpoint(name: Optional[str] = None, artist: Optional[str] = None, username: Optional[str] = None):
     """
     This method is the endpoint for retrieving songs. It accepts two optional parameters.
 
@@ -226,7 +207,7 @@ async def get_songs_endpoint(name: Optional[str] = None, artist: Optional[str] =
     :raises HTTPException 404: If no songs are found matching the given criteria.
     """
     try:
-        songs_sql = await get_songs(name, artist)
+        songs_sql = await get_songs(name, artist, username)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -235,140 +216,6 @@ async def get_songs_endpoint(name: Optional[str] = None, artist: Optional[str] =
 
     songs = [Song(song_id=row[0], song_name=row[1], artist=row[2], md5=row[3]).dict() for row in songs_sql]
     return songs
-
-
-@app.get("/playlists")
-async def get_playlists_endpoint(username: Optional[str] = None, playlist_name: Optional[str] = None):
-    """
-    :param username: Optional. The username of the user you want to get playlists for. If not provided, all playlists will be returned.
-
-    :param playlist_name: Optional. The name of the playlist you want to retrieve. If not provided, all playlists for the user will be returned.
-
-    :return: A list of dictionaries representing the playlists. Each dictionary contains the following keys: 'playlist_id', 'playlist_name', and 'username'.
-    """
-    # list of playlists
-    try:
-        playlists_sql = await get_playlists(username, playlist_name)
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
-    if playlists_sql is None or len(playlists_sql) == 0:
-        raise HTTPException(status_code=404, detail="No playlists found for that user")
-    playlists = [Playlist(playlist_id=row[0], playlist_name=row[1], username=row[2]).dict() for row in playlists_sql]
-    return playlists
-
-@app.get("/playlists/playlist")
-async def get_playlist_endpoint(playlist_id: str):
-    """
-    :param playlist_id: The ID of the playlist to retrieve
-    :return: The playlist information as a dictionary
-    :raises HTTPException: If the request is invalid, if there is an error retrieving the playlist, or if the playlist is not found
-    """
-    if playlist_id is None:
-        raise HTTPException(status_code=400, detail="Invalid Request")
-
-    try:
-        playlist = await get_playlists(playlist_id=playlist_id)
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
-    if playlist is None or len(playlist) == 0:
-        raise HTTPException(status_code=404, detail="Playlist not found")
-    return {"playlist_id": playlist[0], "playlist_name": playlist[1], "username": playlist[2]}
-
-
-@app.get("/playlists/playlist/songs")
-async def get_playlist_songs_endpoint(playlist_id: str):
-    """
-    :param playlist_id: The ID of the playlist for which to retrieve songs.
-    :return: A list of songs found in the specified playlist.
-
-    This endpoint retrieves the songs associated with the given playlist ID. It first checks if the playlist ID is provided, and if not, it throws a HTTPException with a status code of
-    *400 (Bad Request).
-
-    Next, it calls the `get_playlist_songs` function with the provided playlist ID to fetch the songs data from the database. If any error occurs during this process, a HTTPException with
-    * a status code of 500 (Internal Server Error) is raised.
-
-    If no songs are found for the specified playlist ID, a HTTPException with a status code of 404 (Not Found) is raised.
-
-    Finally, it creates a list of dictionaries representing each song using the retrieved songs data. Each dictionary contains the song ID, song name, artist, and md5 information. The list
-    * of songs is then returned.
-
-    Note: This method assumes the existence of a `get_playlist_songs` function that retrieves songs data based on the provided playlist ID.
-    """
-    if playlist_id is None:
-        raise HTTPException(status_code=400, detail="Invalid Request")
-
-    try:
-        songs_sql = await get_playlist_songs(playlist_id)
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
-    if songs_sql is None or len(songs_sql) == 0:
-        raise HTTPException(status_code=404, detail="No songs found for that playlist")
-
-    songs = [Song(song_id=row[0], song_name=row[1], artist=row[2], md5=row[3]).dict() for row in songs_sql]
-
-    return songs
-
-@app.post("/playlists/playlist/add_song/")
-async def add_song_to_playlist_endpoint(request: Request):
-    """
-    Adds a song to a playlist.
-
-    :param request: The request object containing the playlist ID and song ID.
-    :return: A dictionary with a message indicating if the song was added successfully.
-
-    :raises HTTPException: If the request is invalid or the song cannot be added to the playlist.
-    :raises Exception: If an error occurs while adding the song to the playlist.
-    """
-    req = await request.json()
-    if req is None:
-        raise HTTPException(status_code=400, detail="Invalid Request")
-    playlist_id = req.get("playlist_id")
-    song_id = req.get("song_id")
-
-    if playlist_id is None or song_id is None:
-        raise HTTPException(status_code=400, detail="Invalid Request")
-
-    try:
-        result = await add_song_to_playlist(playlist_id, song_id)
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
-    if not result:
-        raise HTTPException(status_code=400, detail="Could not add song to playlist")
-
-    return {"message": "Song added to playlist successfully"}
-
-
-@app.delete("/playlists/playlist/remove_song/")
-async def remove_song_from_playlist_endpoint(playlist_id: int, song_id: int):
-    """
-    Remove a song from a playlist.
-
-    :param playlist_id: The ID of the playlist.
-    :param song_id: The ID of the song.
-    :return: A dictionary containing a success message.
-    :raises HTTPException 400: If the request is invalid.
-    :raises HTTPException 404: If the playlist is not found.
-    :raises HTTPException 500: If an error occurs while removing the song from the playlist.
-    """
-    if playlist_id is None or song_id is None:
-        raise HTTPException(status_code=400, detail="Invalid Request")
-
-    if playlist_id == "" or song_id == "":
-        raise HTTPException(status_code=400, detail="Invalid Request")
-
-    try:
-        playlist = await remove_song_from_playlist(playlist_id, song_id)
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
-    if not playlist:
-        raise HTTPException(status_code=404, detail="Playlist not found")
-
-    return {"message": "Song removed from playlist successfully"}
 
 
 @app.delete("/stop")

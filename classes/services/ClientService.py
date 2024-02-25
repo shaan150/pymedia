@@ -1,4 +1,5 @@
 import hashlib
+import os
 from typing import Optional
 
 from fastapi import UploadFile
@@ -35,10 +36,9 @@ class ClientService(ExtendedService):
     .. automethod:: is_optimal_service
 
     """
-    def __init__(self, debug: Optional[bool] = False):
-        super().__init__(ServiceType.CLIENT_SERVICE, debug=debug)
-        self.debug = debug
-        if not self.debug:
+    def __init__(self):
+        super().__init__(ServiceType.CLIENT_SERVICE)
+        if not os.getenv("DEBUG", "True") == "True":
             self.app.mount("/templates", StaticFiles(directory="templates"), name="static")
 
     async def calculate_md5(self, upload_file: UploadFile) -> str:

@@ -1,4 +1,5 @@
 import asyncio
+import os
 import sys
 from contextlib import asynccontextmanager
 from typing import Optional
@@ -79,7 +80,7 @@ class BaseService:
 
         :return: None
         """
-        if not self.debug:
+        if not os.getenv("DEBUG", "True") == "True":
             try:
                 self.service_port = get_property(f"{self.service_type.value}", self.properties_file)
                 self.service_url = f"{get_local_ip()}:{self.service_port}"

@@ -34,12 +34,14 @@ async def debug():
     services = service.services
     services_with_scores = {}
     services_with_availability = {}
-
-    for url, service_info in services.items():
-        score = await service_info.calc_score()  # Assuming this is an async method
-        availability = await service_info.calc_available_score()  # Assuming this is an async method
-        services_with_scores[url] = score
-        services_with_availability[url] = availability
+    try:
+        for url, service_info in services.items():
+            score = await service_info.calc_score()  # Assuming this is an async method
+            availability = await service_info.calc_available_score()  # Assuming this is an async method
+            services_with_scores[url] = score
+            services_with_availability[url] = availability
+    except Exception as e:
+        raise HTTPException(status_code=500, detail="Error fetching service data: " + str(e))
 
     # For serializing the services, assuming ServiceInfo objects are not directly serializable
     services_data = {
@@ -70,6 +72,9 @@ async def get_service(service_type: ServiceType):
     """
     if service_type is None:
         raise HTTPException(status_code=400, detail="Invalid Request")
+    else:
+        #get enum value from string
+        service_type = ServiceType[service_type.name]
 
     # get all services with type auth_service
     try:

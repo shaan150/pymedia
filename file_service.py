@@ -102,7 +102,7 @@ async def delete_file(song_id: str):
     :rtype: dict
     :raises HTTPException: If the song ID is invalid or an error occurs while deleting the files.
     """
-    if song_id is None:
+    if song_id is None or song_id == "":
         raise HTTPException(status_code=400, detail="Invalid Request")
     try:
         mp3_file_path = os.path.join(service.music_dir, f"{song_id}.mp3")
@@ -110,71 +110,20 @@ async def delete_file(song_id: str):
 
         if os.path.exists(mp3_file_path):
             os.remove(mp3_file_path)
+        else:
+            raise HTTPException(status_code=404, detail="MP3 file not found")
+
         if os.path.exists(image_file_path):
             os.remove(image_file_path)
+        else:
+            raise HTTPException(status_code=404, detail="Image file not found")
+    except HTTPException:
+        raise
     except Exception as e:
         print(f"Error deleting files: {e}")
         raise HTTPException(status_code=500, detail=f"Error deleting files: {e}")
 
     return {"detail": "Files deleted successfully"}
-
-@app.put("/upload/playlist")
-async def upload_playlist(playlist_id: str, image_file: UploadFile = File(...)):
-    """
-    Uploads a playlist with the given playlist ID and image file.
-
-    :param playlist_id: The ID of the playlist.
-    :param image_file: The image file to upload.
-    :return: A dictionary with the detail message indicating the success of the upload.
-    :raises HTTPException: If the request is invalid or if there is an error saving the files.
-    """
-    if playlist_id is None or image_file is None:
-        raise HTTPException(status_code=400, detail="Invalid Request")
-    try:
-        os.makedirs(service.image_dir, exist_ok=True)
-
-        playlist_file_path = os.path.join(service.image_dir, f"{playlist_id}.json")
-
-        async with aiofiles.open(playlist_file_path, "wb") as buffer:
-            content = await image_file.read()
-            await buffer.write(content)
-            await image_file.seek(0)
-    except Exception as e:
-        print(f"Error saving files: {e}")
-        raise HTTPException(status_code=500, detail=f"Error saving files: {e}")
-
-    return {"detail": "Playlist uploaded successfully"}
-
-@app.delete("/delete/playlist")
-async def delete_playlist(playlist_id: str):
-    """
-    :param playlist_id: The ID of the playlist to be deleted.
-    :return: A dictionary with the message "Playlist deleted successfully".
-
-    This method is used to delete a playlist from the server. It takes the ID of the playlist as the parameter and deletes the corresponding playlist file.
-
-    If the playlist_id is None, it will raise an HTTPException with status code 400 and the detail message "Invalid Request".
-
-    If the playlist file exists, it will be deleted from the server. If any error occurs during the deletion process, it will raise an HTTPException with status code 500 and the corresponding
-    * error message.
-
-    Example usage:
-        delete_playlist("abc123")
-    """
-    if playlist_id is None:
-        raise HTTPException(status_code=400, detail="Invalid Request")
-
-    try:
-        playlist_file_path = os.path.join(service.image_dir, f"{playlist_id}.json")
-
-        if os.path.exists(playlist_file_path):
-            os.remove(playlist_file_path)
-    except Exception as e:
-        print(f"Error deleting files: {e}")
-        raise HTTPException(status_code=500, detail=f"Error deleting files: {e}")
-
-    return {"detail": "Playlist deleted successfully"}
-
 @app.get("/download/song")
 async def download_file(song_id: str):
     """
@@ -195,13 +144,13 @@ async def download_file(song_id: str):
         response = download_file(song_id="123")
         return response
     """
-    if song_id is None:
+    if song_id is None or song_id == "":
         raise HTTPException(status_code=400, detail="Invalid Request")
 
     # Find file with song_id, exclude the extension and return any file with that name
     file_location = [f for f in os.listdir(service.music_dir) if f.split(".")[0] == song_id]
     if len(file_location) == 0:
-        raise HTTPException(status_code=404, detail="File not found")
+        raise HTTPException(status_code=404, detail="No Songs Found")
 
     file_location = os.path.join(service.music_dir, file_location[0])
 
@@ -274,17 +223,19 @@ async def download_image(id: str):
 
     Note: This method may raise an HTTPException with a status code of 500 and an error message if any unexpected exceptions occur during the execution of the method.
     """
-    if id is None:
+    if id is None or id == "":
         raise HTTPException(status_code=400, detail="Invalid Request")
     try:
         file_location = [f for f in os.listdir(service.image_dir) if f.split(".")[0] == id]
 
         if len(file_location) == 0:
-            raise HTTPException(status_code=404, detail="File not found")
+            raise HTTPException(status_code=404, detail="No Images Found")
 
         file_location = os.path.join(service.image_dir, file_location[0])
         if not os.path.exists(file_location):
             raise HTTPException(status_code=404, detail="Image not found")
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 

@@ -34,7 +34,7 @@
         <tbody>
         {% for service in services %}
             <tr>
-                <td><a href="/service?service_url={{ service.url }}">{{ service.name }}</a></td>
+                <td><a href="#">{{ service.name }}</a></td>
                 <td>{{ service.type }}</td>
                 <td><a href="http://{{ service.url }}/docs" target="_blank">{{ service.url }}</a></td>
                 <td>{{ service.cpu_used }}</td>

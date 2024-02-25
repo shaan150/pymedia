@@ -64,30 +64,6 @@ class MainService(BaseService):
         update_task = asyncio.create_task(self.check_services())
         self.tasks.append(update_task)
 
-    async def stop(self):
-        """
-        Stops the services.
-
-        :return: None
-        """
-        await super().stop()
-
-        services_to_stop: List[ServiceInfo] = []
-
-        async with self.services_lock:
-            if self.services:
-                services_to_stop = list(self.services.values())
-
-        # tell all services to stop
-
-        if services_to_stop:
-            for service in services_to_stop:
-                response = await self.service_exception_handling(service.url, "stop", "POST")
-                if response.status_code != 200:
-                    logger.error(f"Failed to stop service {service.name}")
-                else:
-                    logger.info(f"Service {service.name} stopped")
-
     async def setup_services(self):
         """
         Set up the required services.
@@ -153,7 +129,7 @@ class MainService(BaseService):
             if check_tasks:
                 await asyncio.gather(*check_tasks)
 
-            await asyncio.sleep(100)  # Wait for 5 minutes before next check
+            await asyncio.sleep(20)  # Wait for 10 seconds before checking again
 
     async def perform_service_check(self, service):
         """
@@ -163,14 +139,16 @@ class MainService(BaseService):
         :return: None
 
         """
+        await self.setup_service(ServiceType.CLIENT_SERVICE)
+
         conn_success = await self.check_and_update_service(service)
         if not conn_success:
             await self.handle_service_failure(service)
         else:
             logger.info(f"Service {service.name} online. Checking load...")
-            service.last_update = time()
+            service.last_update = datetime.now()
             try:
-                await self.get_optimal_service_instance(service.type)
+                await self.get_optimal_service_instance(ServiceType[service.type])
             except NoAvailableServicesException as e:
                 logger.error(f"No available services to start: {str(e)}")
                 raise
@@ -191,7 +169,7 @@ class MainService(BaseService):
         logger.info(f"Service {service.name} offline. Attempting to find a replacement...")
 
         try:
-            optimal_service = await self.get_optimal_service_instance(service.type)
+            optimal_service = await self.get_optimal_service_instance(ServiceType[service.type])
             if not optimal_service:  # If no replacement service is found, raise an exception
                 logger.error(f"No replacement available for service {service.name} of type {service.type}.")
                 raise NoAvailableServicesException(f"No replacement available for service {service.type}.")
@@ -261,7 +239,7 @@ class MainService(BaseService):
                 if created:
                     self.services[service.url].creation_time = created
                 else:
-                    self.services[service.url].creation_time = time()
+                    self.services[service.url].creation_time = datetime.now()
 
                 logger.info(f"Service {service.name} {action}.")
             except Exception as e:
@@ -330,7 +308,7 @@ class MainService(BaseService):
                 # Assuming optimal_service provides a URL or some identifier; adjust based on your implementation
                 logger.info(
                     f"Optimal service instance retrieved: {optimal_service} for service type {service_type.name}")
-                return {"url": optimal_service}
+                return {"url": optimal_service.url}
             else:
                 # It might be more appropriate to log this case and return a specific response or raise an exception
                 logger.warning(f"No available services found for {service_type.name}.")
@@ -372,8 +350,8 @@ class MainService(BaseService):
                 # Log the exception and continue searching for a suitable service instance
                 logger.error(f"Failed to create new instance of {service_type.name}: {e}")
                 return None
-            except Exception:
-                raise
+            except Exception as e:
+                raise e
 
             # Wait before retrying to reduce load and give time for the state to change
             await asyncio.sleep(retry_interval)
@@ -405,7 +383,7 @@ class MainService(BaseService):
 
         async with self.services_lock:  # Acquire the lock
             # Early return if no services are registered
-            if not self.services or not any(service.type.name == service_type.name for service in self.services.values()):
+            if not self.services or not any(service.type == service_type.name for service in self.services.values()):
                 need_new_service = True
 
         if need_new_service:
@@ -413,7 +391,7 @@ class MainService(BaseService):
 
         async with self.services_lock:  # Acquire the lock
             coroutines = [service.calc_score() for service in self.services.values() if
-                          service.type.name == service_type.name]
+                          service.type == service_type.name]
 
         scores = await asyncio.gather(*coroutines)
         # Re-acquire the lock for accessing self.services again
@@ -434,7 +412,7 @@ class MainService(BaseService):
                 raise ValueError(f"Unexpected error while creating new instance of {service_type.name}: {e}")
 
         async with self.services_lock:
-            score_service_pairs = list(zip(scores, [s for s in self.services.values() if s.type.name == service_type.name]))
+            score_service_pairs = list(zip(scores, [s for s in self.services.values() if s.type == service_type.name]))
 
         optimal_service = max(score_service_pairs, key=lambda pair: pair[0])[1]
 
@@ -526,11 +504,11 @@ class MainService(BaseService):
             else:
                 async with self.services_lock:
                     current_services = [service for service in self.services.values() if
-                                        service.type.name == service_type.name]
+                                        service.type == service_type.name]
 
                     # Calculate scores for available services to determine if a new instance is needed
                     coroutines = [service.calc_available_score() for service in self.services.values() if
-                                  service.type.name == service_type]
+                                  service.type == service_type]
 
                 scores = await asyncio.gather(*coroutines)
                 # If existing services are sufficient, select the optimal service
@@ -583,10 +561,13 @@ class MainService(BaseService):
         ```
         """
         try:
+            if not service.type == ServiceType.CLIENT_SERVICE.name:
             # Using handle_rest_request to perform a GET request to the service root
-            response = await self.service_exception_handling(service.url, "", "GET")
+                response = await self.service_exception_handling(service.url, "", "GET")
+            else:
+                response = await self.service_exception_handling(service.url, "service_info", "GET")
 
-            if response.status_code == 200:
+            if response[1] == 200:
                 logger.info(f"Service {service.name} online.")
                 service.last_update = datetime.now()
                 return True

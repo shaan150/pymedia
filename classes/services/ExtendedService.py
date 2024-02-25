@@ -65,9 +65,9 @@ class ExtendedService(BaseService):
     * during the retrieval process, an error log is generated.
 
     """
-    def __init__(self, service_type, debug=False):
-        super().__init__(service_type, debug)
-        if self.debug or debug:
+    def __init__(self, service_type):
+        super().__init__(service_type)
+        if os.getenv("DEBUG", "True") == "True":
             self.main_service_url = "http://localhost:8000"
         else:
             self.main_service_url = get_main_service_url()
@@ -77,6 +77,11 @@ class ExtendedService(BaseService):
             # pause so the error message is printed before exiting by asking for input
             input("Press enter to exit")
             exit(1)
+
+        self.last_db_service = None
+        self.last_file_service = None
+        self.last_auth_service = None
+
 
     async def start_background_tasks(self):
         """
@@ -167,7 +172,7 @@ class ExtendedService(BaseService):
 
             await asyncio.sleep(100)  # Wait for 5 minutes (300 seconds) before next update
 
-    async def get_service_url(self, service_type: ServiceType):
+    async def get_service_url(self, service_type):
         """
         Get the URL of the optimal service instance for the given service type.
 
@@ -202,7 +207,7 @@ class ExtendedService(BaseService):
             logger.error(f"An error occurred while calculating MD5: {str(e)}")
             raise
 
-    async def get_optimal_service_instance(self, service_type: ServiceType):
+    async def get_optimal_service_instance(self, service_type):
         """
         Retrieve the optimal service instance for a given service type.
 
@@ -212,14 +217,28 @@ class ExtendedService(BaseService):
         :return: The optimal service instance.
         :rtype: Awaitable[ServiceInstance]
         """
-        breakpoint()
         if self.main_service_url is None:
             raise InvalidServiceException("No Main Service URL Provided")
         try:
-            return await self.service_exception_handling(self.main_service_url, "get_service", "GET", params={
+            service = await self.service_exception_handling(self.main_service_url, "get_service", "GET", params={
             "service_type": service_type.value})
+            if service_type == ServiceType.DATABASE_SERVICE:
+                self.last_db_service = service
+            elif service_type == ServiceType.FILE_SERVICE:
+                self.last_file_service = service
+            elif service_type == ServiceType.AUTH_SERVICE:
+                self.last_auth_service = service
+
+            return service
         except Exception as e:
-            logger.error(f"An error occurred while getting optimal service instance: {str(e)}")
-            raise
+            if service_type == ServiceType.DATABASE_SERVICE and self.last_db_service:
+                return self.last_db_service
+            elif service_type == ServiceType.FILE_SERVICE and self.last_file_service:
+                return self.last_file_service
+            elif service_type == ServiceType.AUTH_SERVICE and self.last_auth_service:
+                return self.last_auth_service
+            else:
+                logger.error(f"An error occurred while getting optimal service instance: {str(e)}")
+                raise
 
 
