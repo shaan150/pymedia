@@ -26,12 +26,7 @@ def get_local_ip():
     :raises Exception: If unable to get local IP address.
     """
     try:
-        # The following line creates a UDP socket and connects to an external address,
-        # but does not send any data. This is used to determine the local network interface.
-        with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
-            s.connect(("8.8.8.8", 80))  # Connect to a public DNS server
-            local_ip = s.getsockname()[0]
-            return local_ip
+        return socket.gethostname()
     except Exception as e:
         return "Unable to get local IP"
 

@@ -17,12 +17,12 @@ class TestMainServiceHandleServiceFailure(unittest.IsolatedAsyncioTestCase):
         with patch('logging.Logger') as mock_logger, \
                 patch('classes.services.MainService.MainService.get_optimal_service_instance', new_callable=AsyncMock) as mock_get_optimal_service, \
                 patch('classes.services.MainService.MainService.del_service', new_callable=AsyncMock) as mock_del_service:
-            mock_get_optimal_service.return_value = ServiceInfo(name="ReplacementService", service_type=ServiceType.FILE_SERVICE,
+            mock_get_optimal_service.return_value = ServiceInfo(name="ReplacementService", service_type=ServiceType.FILE_SERVICE.name,
                                                                 url="http://replacementurl.com")
 
             await ms().handle_service_failure(service)
 
-            mock_get_optimal_service.assert_awaited_once_with(service.type)
+            mock_get_optimal_service.assert_awaited_once_with(ServiceType.FILE_SERVICE)
             mock_del_service.assert_awaited_once_with(service.url)
 
     async def test_no_replacement_found(self):

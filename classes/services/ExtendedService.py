@@ -170,7 +170,7 @@ class ExtendedService(BaseService):
             except Exception as e:
                 logger.error(f"An error occurred while updating main service: {str(e)}")
 
-            await asyncio.sleep(100)  # Wait for 5 minutes (300 seconds) before next update
+            await asyncio.sleep(15)
 
     async def get_service_url(self, service_type):
         """

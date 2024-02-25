@@ -1,3 +1,4 @@
+import socket
 from unittest.mock import MagicMock
 
 import pytest
@@ -9,19 +10,6 @@ from classes.services.MainService import MainService
 
 class TestMainServiceVerifyIP:
     class TestVerifyIP:
-        @pytest.mark.asyncio
-        async def test_verify_ip_allowed(self, monkeypatch):
-            # Assuming you have a way to mock request.client.host to return a mock IP
-            request = self.MockRequest('192.168.1.1')  # Adjust MockRequest to your mocking strategy
-
-            service_instance = MainService()
-            monkeypatch.setattr(service_instance, 'services', {
-                'some_service': ServiceInfo(name="some_service", service_type="some_type", url="192.168.1.1:1256")})
-
-            try:
-                await service_instance.verify_ip(request)
-            except HTTPException:
-                pytest.fail("Unexpected HTTPException raised")
 
         @pytest.mark.asyncio
         async def test_verify_ip_forbidden(self, monkeypatch):

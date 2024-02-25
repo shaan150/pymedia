@@ -82,10 +82,8 @@ if service_type != "main_service":
                     # check if the main service url is valid and doesn't have http or https
                     if "http://" in main_service_url or "https://" in main_service_url:
                         print("Invalid URL, please enter a valid URL without http or https")
-                    elif main_service_url.count(".") != 3:
-                        print("Invalid IP, Please Enter In The Format: xxx.xxx.xxx.xxx:xxxx")
                     elif main_service_url.count(":") != 1:
-                        print("Invalid IP, Please Enter With Port Number: xxx.xxx.xxx.xxx:xxxx")
+                        print("Invalid IP, Please Enter With Port Number: xxx.xxx.xxx.xxx:xxxx or domain:xxxx")
                     else:
                         # check if the main service url is valid by trying to connect to it on it's root
                         try:
@@ -124,7 +122,7 @@ if __name__ == "__main__":
             logging.getLogger("uvicorn").setLevel(logging.WARNING)
             # After determining the service port
             print(f"ServicePort: {service_port}")
-            print(f"http://{socket.gethostbyname(socket.gethostname())}:{service_port}")
+            print(f"http://{socket.gethostname()}:{service_port}")
             uvicorn.run(f"{service_type}:app", host="0.0.0.0", port=service_port, reload=False)
         except Exception as e:
             print(f"Error: {e}")

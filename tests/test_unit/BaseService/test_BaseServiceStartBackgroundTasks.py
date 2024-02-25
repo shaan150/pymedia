@@ -38,7 +38,7 @@ class TestBaseServiceStartBackgroundTasks(IsolatedAsyncioTestCase):
         mock_socket.return_value.__enter__.return_value = mock_socket_instance
 
         # Setup mock IP address
-        mock_local_ip = '192.168.1.100'
+        mock_local_ip = socket.gethostname()
 
         # Directly mock __getitem__ on the return value of getsockname() to return the mock IP
         mock_socket_instance.getsockname.return_value.__getitem__.side_effect = lambda x: mock_local_ip if x == 0 else None
@@ -48,5 +48,3 @@ class TestBaseServiceStartBackgroundTasks(IsolatedAsyncioTestCase):
 
         expected_url = f"{mock_local_ip}:8080"
         self.assertEqual(service.service_url, expected_url)
-
-        mock_socket.assert_called_with(socket.AF_INET, socket.SOCK_DGRAM)

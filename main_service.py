@@ -88,7 +88,7 @@ async def get_service(service_type: ServiceType):
         raise HTTPException(status_code=500, detail=f"Error Handling Endpoint {str(e)}")
 
 @app.get("/get_services")
-async def get_services(_ = Depends(service.verify_ip)):
+async def get_services():
     """
         Retrieve the services.
 
@@ -99,7 +99,7 @@ async def get_services(_ = Depends(service.verify_ip)):
 
 
 @app.get("/secret_key")
-async def get_secret_key(_=Depends(service.verify_ip)):
+async def get_secret_key():
     """
     :param _: This parameter is ignored and does not have any effect on the method. It is used to satisfy the Depends dependency in FastAPI.
 

@@ -200,12 +200,12 @@ class MainService(BaseService):
         :type request: Request
         :raises HTTPException: If the client IP is not allowed to access the service.
         """
-        client_ip = request.client.host
+        client_ip = request.headers.get('host').upper()
 
         async with self.services_lock:
             allowed_ips = []
             for service in self.services.values():
-                ip_address = await service.extract_ip_from_url()
+                ip_address = service.url
                 if ip_address is not None:
                     allowed_ips.append(ip_address)
 
@@ -414,7 +414,7 @@ class MainService(BaseService):
         async with self.services_lock:
             score_service_pairs = list(zip(scores, [s for s in self.services.values() if s.type == service_type.name]))
 
-        optimal_service = max(score_service_pairs, key=lambda pair: pair[0])[1]
+        optimal_service = min(score_service_pairs, key=lambda pair: pair[0])[1]
 
         return optimal_service
 
