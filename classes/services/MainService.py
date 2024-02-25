@@ -44,12 +44,11 @@ class MainService(BaseService):
     - `update_or_add_service(service: ServiceInfo)`: Update or add a service to the system.
     - `del_service(url: str)`: Remove a service from the collection.
     """
+
     def __init__(self):
         super().__init__(ServiceType.MAIN_SERVICE)
         self.services: Dict[str, ServiceInfo] = {}
         self.secret_key = secrets.token_hex(32)
-
-
 
     async def start_background_tasks(self):
         """
@@ -69,8 +68,7 @@ class MainService(BaseService):
         Set up the required services.
 
         :return: None
-        """
-        try:
+       try:
             await self.setup_service(ServiceType.DATABASE_SERVICE)
             await self.setup_service(ServiceType.FILE_SERVICE)
             await self.setup_service(ServiceType.AUTH_SERVICE)
@@ -78,7 +76,8 @@ class MainService(BaseService):
             await self.setup_service(ServiceType.CLIENT_SERVICE)
 
         except Exception as e:
-            logger.error(f"Error in setup_services: {str(e)}")
+            logger.error(f"Error in setup_services: {str(e)}")"""
+        pass
 
     async def setup_service(self, service_type: ServiceType):
         """
@@ -117,7 +116,8 @@ class MainService(BaseService):
             async with self.services_lock:
                 if self.services:
                     # Copy necessary info to reduce lock holding time
-                    services_to_check = [(service, datetime.now() - service.last_update) for service in self.services.values()]
+                    services_to_check = [(service, datetime.now() - service.last_update) for service in
+                                         self.services.values()]
 
             # Process services outside of lock context to allow other operations to proceed
             check_tasks = []
@@ -139,7 +139,13 @@ class MainService(BaseService):
         :return: None
 
         """
-        await self.setup_service(ServiceType.CLIENT_SERVICE)
+        async with self.services_lock:
+            # get client service
+            client_service = [service for service in self.services.values() if
+                              service.type == ServiceType.CLIENT_SERVICE.name]
+
+        if client_service is None or len(client_service) == 0:
+            await self.get_optimal_service_instance(ServiceType.CLIENT_SERVICE)
 
         conn_success = await self.check_and_update_service(service)
         if not conn_success:
@@ -383,11 +389,18 @@ class MainService(BaseService):
 
         async with self.services_lock:  # Acquire the lock
             # Early return if no services are registered
-            if not self.services or not any(service.type == service_type.name for service in self.services.values()):
+            if not self.services:
                 need_new_service = True
 
         if need_new_service:
             return await self.create_new_instance(service_type, False)
+
+        async with self.services_lock:  # Acquire the lock
+            if not any(service.type == service_type.name for service in self.services.values()):
+                need_new_service = True
+
+        if need_new_service:
+            return await self.create_new_instance(service_type)
 
         async with self.services_lock:  # Acquire the lock
             coroutines = [service.calc_score() for service in self.services.values() if
@@ -444,7 +457,8 @@ class MainService(BaseService):
             while asyncio.get_event_loop().time() - start_time < timeout:
                 async with self.services_lock:
                     # Ensure thread-safe access to self.services
-                    updated_services = [service for service in self.services.values() if service.type == service_type.name]
+                    updated_services = [service for service in self.services.values() if
+                                        service.type == service_type.name]
 
                 # Check for the addition of new services by comparing the count against the snapshot
                 if len(updated_services) > len(current_services):
@@ -463,6 +477,7 @@ class MainService(BaseService):
             raise TimeoutError(f"Timeout waiting for a new service of type {service_type.name} to become operational.")
         except Exception:
             raise
+
     async def create_new_instance(self, service_type: ServiceType, existing_services=True):
         """
         :param service_type: The type of service to create a new instance of.
@@ -496,9 +511,7 @@ class MainService(BaseService):
 
         # Asynchronously start a new service instance
         try:
-            current_services = []
-
-            if not existing_services or len(current_services) == 0:
+            if not existing_services:
                 await start_service(self.service_url, service_type)
 
             else:
@@ -508,14 +521,15 @@ class MainService(BaseService):
 
                     # Calculate scores for available services to determine if a new instance is needed
                     coroutines = [service.calc_available_score() for service in self.services.values() if
-                                  service.type == service_type]
+                                  service.url.split(":")[0] != self.service_url.split(":")[0]]
 
                 scores = await asyncio.gather(*coroutines)
                 # If existing services are sufficient, select the optimal service
 
                 async with self.services_lock:
                     score_service_pairs = list(
-                        zip(scores, [s for s in self.services.values() if s.name == service_type.name]))
+                        zip(scores, [s for s in self.services.values() if s.url.split(":")[0] !=
+                                     self.service_url.split(":")[0]]))
 
                 optimal_service = max(score_service_pairs, key=lambda pair: pair[0])[1]
 
@@ -562,7 +576,7 @@ class MainService(BaseService):
         """
         try:
             if not service.type == ServiceType.CLIENT_SERVICE.name:
-            # Using handle_rest_request to perform a GET request to the service root
+                # Using handle_rest_request to perform a GET request to the service root
                 response = await self.service_exception_handling(service.url, "", "GET")
             else:
                 response = await self.service_exception_handling(service.url, "service_info", "GET")
@@ -580,4 +594,3 @@ class MainService(BaseService):
             logger.error(f"Failed to check and update service {service.name}: {e}")
 
         return False
-

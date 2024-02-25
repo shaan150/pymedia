@@ -699,3 +699,20 @@ async def endpoint_setup(request: Request, endpoint: str):
     response = await redirect_to_optimal_service(request, endpoint)
     if response:
         return response
+
+@app.post("/start_service")
+async def start_service(request: Request):
+    """
+    :param request: The request object containing the client's request data.
+    :return: None
+
+    This method is a POST endpoint that starts a service. It takes a request object as a parameter and does not have a return value.
+    The method tries to execute the start_service_endpoint function with the provided request. If an HTTPException is raised, it is re-raised.
+    If any other exception is raised, it is caught, and a new HTTPException with a 500 status code and the exception message as the detail is raised.
+    """
+    try:
+        await start_service_endpoint(request)
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
