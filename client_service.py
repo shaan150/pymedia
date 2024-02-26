@@ -5,13 +5,12 @@ from typing import Optional
 from fastapi import Form, Request, Response, HTTPException, UploadFile, File, status, Depends
 from fastapi.exceptions import StarletteHTTPException
 from fastapi.logger import logger
-from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse
+from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 
 from classes.enum.ServiceType import ServiceType
 from classes.services.ClientService import ClientService
 from utils import service_utils
-from utils.service_utils import start_service_endpoint
 
 service = ClientService()
 templates = Jinja2Templates(directory="templates")
@@ -561,23 +560,6 @@ async def get_songs(request: Request, _=Depends(validate_user_session)):
         return templates.TemplateResponse("songs.html", {"request": request, "error": error})
 
 
-@app.post("/start_service")
-async def start_service(request: Request):
-    """
-    Start Service
-
-    This method is used to start a service based on the given request.
-
-    Parameters:
-        request (Request): The request object containing the necessary information to start the service.
-
-    Returns:
-        None
-
-    """
-    await start_service_endpoint(request)
-
-
 @app.delete("/stop")
 async def stop_service():
     """
@@ -711,7 +693,7 @@ async def start_service(request: Request):
     If any other exception is raised, it is caught, and a new HTTPException with a 500 status code and the exception message as the detail is raised.
     """
     try:
-        await start_service_endpoint(request)
+        await service.start_service_endpoint(request)
     except HTTPException:
         raise
     except Exception as e:

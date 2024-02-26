@@ -511,13 +511,16 @@ class MainService(BaseService):
 
         # Asynchronously start a new service instance
         try:
-            if not existing_services:
+            async with self.services_lock:
+                current_services = [service for service in self.services.values() if
+                                    service.type == service_type.name]
+                all_services_on_system = [service for service in self.services.values() if
+                                  service.url.split(":")[0] == self.service_url.split(":")[0]]
+            if not existing_services or len(all_services_on_system) == len(self.services):
                 await start_service(self.service_url, service_type)
 
             else:
                 async with self.services_lock:
-                    current_services = [service for service in self.services.values() if
-                                        service.type == service_type.name]
 
                     # Calculate scores for available services to determine if a new instance is needed
                     coroutines = [service.calc_available_score() for service in self.services.values() if

@@ -185,31 +185,6 @@ async def start_service(main_service_url, service_type: ServiceType, secret_key=
     print(f"New instance of {service_type.value} started successfully.")
 
 
-async def start_service_endpoint(request: Request):
-    """
-    Starts a service endpoint.
-
-    :param request: The incoming request object.
-    :return: None.
-    :raises HTTPException: If the request is invalid or if an error occurs when starting the service.
-    """
-    req = await request.json()
-
-    if req is None:
-        raise HTTPException(status_code=400, detail="Invalid Request")
-
-    service_type = req.get("service_type")
-
-    main_service_url = get_main_service_url()
-
-    if service_type is None:
-        raise HTTPException(status_code=400, detail="Invalid Request")
-
-    try:
-        await start_service(main_service_url, service_type)
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
 def get_property(property: str, file_path: str):
     """
     Get the value of a specified property from a JSON file.

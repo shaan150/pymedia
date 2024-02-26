@@ -7,7 +7,6 @@ from jwt import PyJWTError
 
 from classes.enum.ServiceType import ServiceType
 from classes.services.AuthService import AuthService
-from utils.service_utils import start_service_endpoint
 
 service = AuthService()
 app = service.app
@@ -148,7 +147,7 @@ async def start_service(request: Request):
     If any other exception is raised, it is caught, and a new HTTPException with a 500 status code and the exception message as the detail is raised.
     """
     try:
-        await start_service_endpoint(request)
+        await service.start_service_endpoint(request)
     except HTTPException:
         raise
     except Exception as e:

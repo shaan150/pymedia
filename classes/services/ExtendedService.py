@@ -6,14 +6,14 @@ from datetime import time
 
 import aiofiles
 import psutil
-from fastapi import HTTPException
+from fastapi import HTTPException, Request
 from fastapi.logger import logger
 
 from classes.enum.ServiceType import ServiceType
 from classes.exception.InvalidServiceException import InvalidServiceException
 from classes.services.BaseService import BaseService
 from utils.service_utils import (
-    get_main_service_url
+    get_main_service_url, start_service
 )
 
 
@@ -241,4 +241,29 @@ class ExtendedService(BaseService):
                 logger.error(f"An error occurred while getting optimal service instance: {str(e)}")
                 raise
 
+    async def start_service_endpoint(self, request: Request):
+        """
+        Starts a service endpoint.
+
+        :param request: The incoming request object.
+        :return: None.
+        :raises HTTPException: If the request is invalid or if an error occurs when starting the service.
+        """
+        req = await request.json()
+
+        if req is None:
+            raise HTTPException(status_code=400, detail="Invalid Request")
+
+        try:
+            service_type_req = req.get("service_type")
+            service_type = ServiceType[service_type_req.upper()]
+        except Exception as e:
+            raise HTTPException(status_code=400, detail=str(e))
+
+        main_service_url = self.main_service_url
+
+        try:
+            await start_service(main_service_url, service_type)
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=str(e))
 
