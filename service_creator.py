@@ -54,23 +54,29 @@ else:
 
 # uses socket to get available port
 ipaddress = socket.gethostbyname(socket.gethostname())
+def is_port_available(host, port):
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+        return s.connect_ex((host, port)) != 0
+
 service_port = 50000
-while True:
-    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    try:
-        s.bind((socket.gethostbyname(socket.gethostname()), service_port))
-    except socket:
-        pass
+found_port = False
 
-    s.listen()
-    if service_port in range(50000, 50010):     #50000 - 50010
+# Loop until an available port is found or the port exceeds 50010
+while not found_port and service_port <= 50010:
+    if is_port_available(socket.gethostbyname(socket.gethostname()), service_port):
+        found_port = True
         break
-    elif service_port > 50010:
-        raise Exception("Unable to get port within 50000 and 50010")
-
     service_port += 1
 
-s.close()
+# If an available port was found, proceed with binding and listening
+if found_port:
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+        s.bind((socket.gethostbyname(socket.gethostname()), service_port))
+        s.listen()
+        print(f"Server listening on port {service_port}")
+        # You can accept connections here using s.accept() in a loop
+else:
+    raise Exception("Unable to find an available port within the range 50000 to 50010.")
 
 main_service_url = None
 
@@ -136,6 +142,7 @@ if __name__ == "__main__":
             # After determining the service port
             print(f"ServicePort: {service_port}")
             print(f"http://{socket.gethostbyname(socket.gethostname())}:{service_port}")
+            s.close()
             uvicorn.run(f"{service_type}:app", host="0.0.0.0", port=service_port, reload=False)
         except Exception as e:
             print(f"Error: {e}")
