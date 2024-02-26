@@ -53,10 +53,19 @@ else:
         raise Exception("Invalid Service Type")
 
 # uses socket to get available port
-s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-s.bind(("", 0))
-s.listen(1)
-service_port = s.getsockname()[1]
+ipaddress = socket.gethostbyname(socket.gethostname())
+service_port = 50000
+while True:
+    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    s.bind((socket.gethostbyname(socket.gethostname()), service_port))
+    s.listen()
+    if service_port in range(50000, 50010):     #50000 - 50010
+        break
+    elif service_port > 50010:
+        raise Exception("Unable to get port within 50000 and 50010")
+
+    service_port += 1
+
 s.close()
 
 main_service_url = None
@@ -122,7 +131,7 @@ if __name__ == "__main__":
             logging.getLogger("uvicorn").setLevel(logging.WARNING)
             # After determining the service port
             print(f"ServicePort: {service_port}")
-            print(f"http://{socket.gethostname()}:{service_port}")
+            print(f"http://{socket.gethostbyname(socket.gethostname())}:{service_port}")
             uvicorn.run(f"{service_type}:app", host="0.0.0.0", port=service_port, reload=False)
         except Exception as e:
             print(f"Error: {e}")
