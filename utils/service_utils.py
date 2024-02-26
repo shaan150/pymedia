@@ -2,6 +2,7 @@ import asyncio
 import json
 import random
 import socket
+import sys
 from datetime import datetime
 
 import httpx
@@ -164,7 +165,7 @@ async def start_service(main_service_url, service_type: ServiceType, secret_key=
 
     # Construct the command to run the service creator script with the necessary arguments
     cmd = [
-        '.\\ven\\Scripts\\python.exe', 'service_creator.py',
+        sys.executable, 'service_creator.py',
         '--auto', 'true',
         '--main_service_url', main_service_url,
         '--service_type', service_type.name
