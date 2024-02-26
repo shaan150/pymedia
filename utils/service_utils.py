@@ -27,7 +27,7 @@ def get_local_ip():
     :raises Exception: If unable to get local IP address.
     """
     try:
-        return socket.gethostname()
+        return socket.gethostbyname(socket.gethostname())
     except Exception as e:
         return "Unable to get local IP"
 

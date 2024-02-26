@@ -57,7 +57,11 @@ ipaddress = socket.gethostbyname(socket.gethostname())
 service_port = 50000
 while True:
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    s.bind((socket.gethostbyname(socket.gethostname()), service_port))
+    try:
+        s.bind((socket.gethostbyname(socket.gethostname()), service_port))
+    except socket:
+        pass
+
     s.listen()
     if service_port in range(50000, 50010):     #50000 - 50010
         break
