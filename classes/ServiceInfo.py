@@ -147,7 +147,7 @@ class ServiceInfo:
         :rtype: float
         """
         if (self.memory_free <= 0 or self.total_memory <= 0 or self.memory_free - self.memory_used <= 0
-                or self.cpu_free <= 0 or self.cpu_free - self.cpu_used <= 0):
+                or self.cpu_free <= 0):
             return 1
         # Convert memory used to a percentage of total memory for scoring
         memory_used_percent = (self.memory_used / self.memory_free) * 100

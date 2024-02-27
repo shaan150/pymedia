@@ -7,4 +7,4 @@ class TestUtilityFunctions(unittest.TestCase):
     def test_get_local_ip(self):
 
         ip = get_local_ip()
-        self.assertEqual(ip, socket.gethostname())
+        self.assertEqual(ip, socket.gethostbyname(socket.gethostname()))

@@ -1,6 +1,7 @@
 import pytest
 from unittest.mock import MagicMock, patch, AsyncMock
 
+from classes.exception.FailedServiceCreationException import FailedServiceCreationException
 from classes.services.MainService import MainService
 from classes.enum.ServiceType import ServiceType
 from classes.ServiceInfo import ServiceInfo  # Adjust the import path if necessary
@@ -40,7 +41,7 @@ async def test_get_service_no_available_services(service_instance, service_type_
         # Mocking the get_optimal_service_instance method to return None asynchronously
         mock_get_optimal_service_instance.return_value = None
 
-        with pytest.raises(NoAvailableServicesException):
+        with pytest.raises(FailedServiceCreationException):
             await service_instance.get_service(service_type_file)
 @pytest.mark.asyncio
 async def test_get_service_invalid_service_type(service_instance, service_type_invalid):

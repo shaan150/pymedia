@@ -38,7 +38,7 @@ class TestBaseServiceStartBackgroundTasks(IsolatedAsyncioTestCase):
         mock_socket.return_value.__enter__.return_value = mock_socket_instance
 
         # Setup mock IP address
-        mock_local_ip = socket.gethostname()
+        mock_local_ip = socket.gethostbyname(socket.gethostname())
 
         # Directly mock __getitem__ on the return value of getsockname() to return the mock IP
         mock_socket_instance.getsockname.return_value.__getitem__.side_effect = lambda x: mock_local_ip if x == 0 else None

@@ -12,7 +12,7 @@ class TestServiceInfoScoreCalculations(IsolatedAsyncioTestCase):
     async def test_calc_score(self):
         service_info = ServiceInfo(
             name="test-service",
-            service_type=ServiceType.DATABASE_SERVICE,
+            service_type=ServiceType.DATABASE_SERVICE.name,
             url="http://example.com",
             cpu_usage=60,
             memory_usage=1024,
@@ -29,7 +29,7 @@ class TestServiceInfoScoreCalculations(IsolatedAsyncioTestCase):
     async def test_calc_available_score(self):
         service_info = ServiceInfo(
             name="test-service",
-            service_type=ServiceType.DATABASE_SERVICE,
+            service_type=ServiceType.DATABASE_SERVICE.name,
             url="http://example.com",
             cpu_usage=60,
             memory_usage=1024,
