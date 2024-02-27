@@ -1,17 +1,15 @@
-import asyncio
+import argparse
 import json
 import logging
 import os
 import socket
-import sys
 
 import requests
 import uvicorn
-import argparse
 
-# Check if a command-line argument for service_type is provided
 from classes.enum.ServiceType import ServiceType
 
+# Allows arguments to be passed to the script
 parser = argparse.ArgumentParser()
 parser.add_argument('-s', '--service_type', help='Service Type')
 parser.add_argument('-m', '--main_service_url', help='Main Service URL')
@@ -71,7 +69,7 @@ while not found_port and service_port <= 50010:
 # If an available port was found, proceed with binding and listening
 if found_port:
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-        s.bind((socket.gethostbyname(socket.gethostname()), service_port))
+        s.bind(("0.0.0.0", service_port))
         s.listen()
         print(f"Server listening on port {service_port}")
         # You can accept connections here using s.accept() in a loop
@@ -102,7 +100,7 @@ if service_type != "main_service":
                     if "http://" in main_service_url or "https://" in main_service_url:
                         print("Invalid URL, please enter a valid URL without http or https")
                     elif main_service_url.count(":") != 1:
-                        print("Invalid IP, Please Enter With Port Number: xxx.xxx.xxx.xxx:xxxx or domain:xxxx")
+                        print("Invalid IP, Please Enter With Port Number: xxx.xxx.xxx.xxx:xxxx")
                     else:
                         # check if the main service url is valid by trying to connect to it on it's root
                         try:
@@ -139,9 +137,10 @@ if __name__ == "__main__":
             os.environ["DEBUG"] = "False"
             logging.getLogger("asyncio").setLevel(logging.WARNING)
             logging.getLogger("uvicorn").setLevel(logging.WARNING)
-            # After determining the service port
-            print(f"ServicePort: {service_port}")
+            # After determining the service port, start the service
             print(f"http://{ipaddress}:{service_port}")
+            # Close here as the port is now in use the service, the reason we kept it open was to prevent the port from
+            # being used by another service
             s.close()
             uvicorn.run(f"{service_type}:app", host="0.0.0.0", port=service_port, reload=False)
         except Exception as e:
