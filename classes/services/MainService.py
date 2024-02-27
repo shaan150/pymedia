@@ -306,12 +306,11 @@ class MainService(BaseService):
                 return service
             else:
                 # if the service is not available, start a new instance
-                return await self.create_new_instance(service_type)
+                return await self.setup_service(service_type)
 
         try:
             optimal_service = await self.get_optimal_service_instance(service_type)
             if optimal_service:
-                # Assuming optimal_service provides a URL or some identifier; adjust based on your implementation
                 logger.info(
                     f"Optimal service instance retrieved: {optimal_service} for service type {service_type.name}")
                 return {"url": optimal_service.url}

@@ -7,25 +7,6 @@ $(document).ready(function() {
     });
 });
 
-function confirmDelete(songId) {
-    // Show modal logic here, store songId in a data attribute or global variable for use in delete confirmation
-    let modal = document.getElementById('deleteModal');
-    modal.style.display = 'block';
-    let confirmDeleteBtn = document.getElementById('confirmDelete');
-    confirmDeleteBtn.onclick = function() { deleteSong(songId); }; // Assign the delete function to the confirm button
-}
-
-function deleteSong(songId) {
-    // Send request to delete song
-    fetch(`/songs/song/delete?song_id=${songId}`, { method: 'DELETE' })
-        .then(response => {
-            if (response.ok) {
-                window.location.reload();
-            }
-        })
-        .catch(error => console.error('Error:', error));
-}
-
 $(document).ready( function () {
     $('#playlistTable').DataTable();
 } );

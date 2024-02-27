@@ -141,7 +141,7 @@ if __name__ == "__main__":
             logging.getLogger("uvicorn").setLevel(logging.WARNING)
             # After determining the service port
             print(f"ServicePort: {service_port}")
-            print(f"http://{socket.gethostbyname(socket.gethostname())}:{service_port}")
+            print(f"http://{ipaddress}:{service_port}")
             s.close()
             uvicorn.run(f"{service_type}:app", host="0.0.0.0", port=service_port, reload=False)
         except Exception as e:

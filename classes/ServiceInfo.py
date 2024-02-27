@@ -141,13 +141,14 @@ class ServiceInfo:
 
     async def calc_score(self):
         """
-        Calculate the score based on CPU and memory usage.
+        Calculate the weighted score based on CPU and memory usage.
 
-        :param self: The instance of the class.
-        :type self: class instance
-        :return: The calculated score.
+        :return: The calculated weighted score.
         :rtype: float
         """
+        if (self.memory_free <= 0 or self.total_memory <= 0 or self.memory_free - self.memory_used <= 0
+                or self.cpu_free <= 0 or self.cpu_free - self.cpu_used <= 0):
+            return 1
         # Convert memory used to a percentage of total memory for scoring
         memory_used_percent = (self.memory_used / self.memory_free) * 100
         weighted_score = (self.cpu_used * CPU_WEIGHTING) + (memory_used_percent * MEMORY_WEIGHTING)
